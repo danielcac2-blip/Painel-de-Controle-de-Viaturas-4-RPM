@@ -745,8 +745,10 @@ const D_EMB = {"kpi": {"total": 686, "ativas": 493, "alienacao": 151, "organicas
 let D = D_EMB;
 
 /* ---------- leitura das abas do Google Sheets ---------- */
+/* headers=0 desliga a detecção automática do Google, que junta a linha de título
+   com a de rótulos e transforma o cabeçalho real em dado */
 const gviz = aba => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`
-  + `?tqx=out:csv&sheet=${encodeURIComponent(aba)}`;
+  + `?tqx=out:csv&headers=0&sheet=${encodeURIComponent(aba)}`;
 
 function csv(txt){
   const linhas=[]; let campo='', linha=[], aspas=false;
@@ -767,18 +769,19 @@ const num = v => { if(v===''||v==null) return null;
    Google exporta; a chave é normalizada para o casamento não depender disso */
 const chave = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .replace(/[^A-Za-z0-9]/g,'').toUpperCase();
-async function aba(nome, cab){
+/* a linha de cabeçalho é localizada pela presença de uma coluna conhecida —
+   não por posição fixa, porque o Google varia o recorte conforme a aba */
+async function aba(nome, marca){
   const r = await fetch(gviz(nome));
   if(!r.ok) throw new Error(nome+': '+r.status);
   const L = csv(await r.text());
-  let h = (L[cab]||[]).map(x=>String(x).trim());
-  /* se a linha indicada não parecer cabeçalho, procura a que tiver mais rótulos */
-  if(h.filter(Boolean).length < 3){
-    for(let i=0;i<Math.min(4,L.length);i++)
-      if(L[i].filter(Boolean).length > h.filter(Boolean).length){ h=L[i].map(x=>String(x).trim()); cab=i; }
-  }
+  let cab = -1;
+  for(let i=0;i<Math.min(6,L.length);i++)
+    if(L[i].some(v=>chave(v)===chave(marca))){ cab=i; break; }
+  if(cab<0) throw new Error(nome+': coluna "'+marca+'" não encontrada no cabeçalho');
+  const h = L[cab].map(x=>String(x).trim());
   const out = L.slice(cab+1).filter(l=>l.some(v=>v!=='')).map(l=>{
-    const o={}; h.forEach((k,i)=>{ o[chave(k)] = l[i]===undefined?'':l[i]; }); return o; });
+    const o={}; h.forEach((k,i)=>{ if(k) o[chave(k)] = l[i]===undefined?'':l[i]; }); return o; });
   out._cab = h;
   return out;
 }
@@ -787,12 +790,14 @@ const g = (o,...alts) => { for(const a of alts){ const v=o[chave(a)]; if(v!==und
 
 async function carregar(){
   const [FR,QD,CO,OC,PV,PM,PU,PUM,PG,PMAN] = await Promise.all([
-    aba('FROTA',1), aba('QDL',1), aba('COTAS',1), aba('OCIOSAS',1),
-    aba('PAINEL_ABAST_VTR',0), aba('PAINEL_ABAST_MES',0), aba('PAINEL_ABAST_UE',0),
-    aba('PAINEL_ABAST_UE_MES',0), aba('PAINEL_ABAST_GERAL',0), aba('PAINEL_MANUTENCAO',0)]);
+    aba('FROTA','PLACA'), aba('QDL','CATEGORIA DO QDL'), aba('COTAS','UEOp'),
+    aba('OCIOSAS','PREFIXO'), aba('PAINEL_ABAST_VTR','PLACA'), aba('PAINEL_ABAST_MES','MES'),
+    aba('PAINEL_ABAST_UE','UEOP'), aba('PAINEL_ABAST_UE_MES','UEOP'),
+    aba('PAINEL_ABAST_GERAL','CHAVE'), aba('PAINEL_MANUTENCAO','PLACA')]);
 
   /* --- viaturas --- */
   console.log('colunas da FROTA:', FR._cab);
+  console.log('linhas da FROTA:', FR.length, '| 1ª linha:', FR[0]);
   const V = FR.filter(r=>g(r,'PLACA')).map(r=>{
     const pdl=g(r,'PNEU DIANT. — LARGURA','PNEU DIANT LARGURA'),
           pda=g(r,'PNEU DIANT. — ARO','PNEU DIANT ARO'),
@@ -821,6 +826,8 @@ async function carregar(){
     aro: pda?pda+'"'+(pta&&pta!==pda?' / '+pta+'"':''):null,
     oleo: ov?ov+(oa?' · '+oa:''):null};
   });
+  console.log('viaturas montadas:', V.length, '| exemplo:', V[0]);
+  if(!V.length) throw new Error('FROTA lida mas nenhuma viatura montada');
   const AL = V.filter(x=>x.al==='SIM'), MN = V.filter(x=>x.man==='SIM');
   const AT = V.filter(x=>x.al!=='SIM'&&x.man!=='SIM');
   const md = a => {const n=a.filter(x=>x!=null); return n.length?n.reduce((x,y)=>x+y,0)/n.length:null;};
@@ -1166,7 +1173,7 @@ diverg(document.getElementById('dvUe'),
 /* ---------- detalhamento por unidade ---------- */
 const VT_UE = D.viaturas;
 uniq(VT_UE.map(v=>v.ue)).forEach(u=>unSel.innerHTML += `<option>${u}</option>`);
-unSel.value = D.ueop_frota[0].k;
+if(D.ueop_frota[0]) unSel.value = D.ueop_frota[0].k;
 
 function bloco(tit, sub, corpo){
   return `<div class="card"><h3>${tit}${sub?` <small>${sub}</small>`:''}</h3>${corpo}</div>`;
