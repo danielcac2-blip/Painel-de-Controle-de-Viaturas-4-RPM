@@ -763,14 +763,27 @@ function csv(txt){
 }
 const num = v => { if(v===''||v==null) return null;
   const n=Number(String(v).replace(/\./g,'').replace(',','.')); return isNaN(n)?null:n; };
+/* nomes de coluna chegam com acentuação, quebras e pontuação variáveis conforme o
+   Google exporta; a chave é normalizada para o casamento não depender disso */
+const chave = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^A-Za-z0-9]/g,'').toUpperCase();
 async function aba(nome, cab){
   const r = await fetch(gviz(nome));
   if(!r.ok) throw new Error(nome+': '+r.status);
   const L = csv(await r.text());
-  const h = L[cab].map(x=>String(x).trim());
-  return L.slice(cab+1).filter(l=>l.some(v=>v!=='')).map(l=>{
-    const o={}; h.forEach((k,i)=>o[k]=l[i]===undefined?'':l[i]); return o; });
+  let h = (L[cab]||[]).map(x=>String(x).trim());
+  /* se a linha indicada não parecer cabeçalho, procura a que tiver mais rótulos */
+  if(h.filter(Boolean).length < 3){
+    for(let i=0;i<Math.min(4,L.length);i++)
+      if(L[i].filter(Boolean).length > h.filter(Boolean).length){ h=L[i].map(x=>String(x).trim()); cab=i; }
+  }
+  const out = L.slice(cab+1).filter(l=>l.some(v=>v!=='')).map(l=>{
+    const o={}; h.forEach((k,i)=>{ o[chave(k)] = l[i]===undefined?'':l[i]; }); return o; });
+  out._cab = h;
+  return out;
 }
+const g = (o,...alts) => { for(const a of alts){ const v=o[chave(a)]; if(v!==undefined&&v!=='') return v; }
+  return ''; };
 
 async function carregar(){
   const [FR,QD,CO,OC,PV,PM,PU,PUM,PG,PMAN] = await Promise.all([
@@ -779,22 +792,35 @@ async function carregar(){
     aba('PAINEL_ABAST_UE_MES',0), aba('PAINEL_ABAST_GERAL',0), aba('PAINEL_MANUTENCAO',0)]);
 
   /* --- viaturas --- */
-  const V = FR.filter(r=>r['PLACA']).map(r=>({
-    pf:r['PREFIXO'], pl:r['PLACA'], pt:r['Nº PATRIMÔNIO'], mm:r['MARCA / MODELO'],
-    cl:r['CLASSE DO VEÍCULO'], sb:r['SUBCLASSE / EMPREGO OPERACIONAL'],
-    af:num(r['ANO FAB.']), am:num(r['ANO MOD.']),
-    idd:num(r['ANO FAB.'])?new Date().getFullYear()-num(r['ANO FAB.']):null,
-    org:r['ORIGEM'], ue:r['UEOp'], fr:r['FRAÇÃO DETENTORA'], mu:r['MUNICÍPIO'],
-    cq:r['CATEGORIA DO QDL'], uq:r['UNIDADE / FRAÇÃO NO QDL'], od:num(r['ODÔMETRO (KM)']),
-    ab:r['ÚLT. ABASTECIMENTO'], vl:num(r['VALOR DO BEM (R$)']), tb:r['TIPO DE BEM'],
-    dg:r['DESTINAÇÃO (SIGLog)'], dsi:r['DESTINAÇÃO (SIAD)'], al:r['EM ALIENAÇÃO?'],
-    si:r['CONSTA NO SIAD?'], ur:r['UNIDADE RESPONSÁVEL (SIAD)'], inf:r['CADASTRO INFERIDO'],
-    comb:r['COMBUSTÍVEL'], man:r['EM MANUT./ACIDENTADO?'], manmot:r['MOTIVO DA MANUTENÇÃO'],
-    pnd:(r['PNEU DIANT. — LARGURA']?`${r['PNEU DIANT. — LARGURA']}/${r['PNEU DIANT. — PERFIL']} R${r['PNEU DIANT. — ARO']}`:null),
-    pnt:(r['PNEU TRAS. — LARGURA']?`${r['PNEU TRAS. — LARGURA']}/${r['PNEU TRAS. — PERFIL']} R${r['PNEU TRAS. — ARO']}`:null),
-    aro:(r['PNEU DIANT. — ARO']?r['PNEU DIANT. — ARO']+'"'+(r['PNEU TRAS. — ARO']&&r['PNEU TRAS. — ARO']!==r['PNEU DIANT. — ARO']?' / '+r['PNEU TRAS. — ARO']+'"':''):null),
-    oleo:(r['ÓLEO VISCOSIDADE']?r['ÓLEO VISCOSIDADE']+(r['ÓLEO API']?' · '+r['ÓLEO API']:''):null),
-  }));
+  console.log('colunas da FROTA:', FR._cab);
+  const V = FR.filter(r=>g(r,'PLACA')).map(r=>{
+    const pdl=g(r,'PNEU DIANT. — LARGURA','PNEU DIANT LARGURA'),
+          pda=g(r,'PNEU DIANT. — ARO','PNEU DIANT ARO'),
+          pdp=g(r,'PNEU DIANT. — PERFIL','PNEU DIANT PERFIL'),
+          ptl=g(r,'PNEU TRAS. — LARGURA','PNEU TRAS LARGURA'),
+          pta=g(r,'PNEU TRAS. — ARO','PNEU TRAS ARO'),
+          ptp=g(r,'PNEU TRAS. — PERFIL','PNEU TRAS PERFIL'),
+          ov=g(r,'ÓLEO VISCOSIDADE'), oa=g(r,'ÓLEO API'), af=num(g(r,'ANO FAB.','ANO FAB'));
+    return {
+    pf:g(r,'PREFIXO'), pl:g(r,'PLACA'), pt:g(r,'Nº PATRIMÔNIO','N PATRIMONIO'),
+    mm:g(r,'MARCA / MODELO'), cl:g(r,'CLASSE DO VEÍCULO'),
+    sb:g(r,'SUBCLASSE / EMPREGO OPERACIONAL'),
+    af:af, am:num(g(r,'ANO MOD.','ANO MOD')),
+    idd:af?new Date().getFullYear()-af:null,
+    org:g(r,'ORIGEM'), ue:g(r,'UEOp'), fr:g(r,'FRAÇÃO DETENTORA'), mu:g(r,'MUNICÍPIO'),
+    cq:g(r,'CATEGORIA DO QDL'), uq:g(r,'UNIDADE / FRAÇÃO NO QDL'),
+    od:num(g(r,'ODÔMETRO (KM)','ODOMETRO KM')), ab:g(r,'ÚLT. ABASTECIMENTO'),
+    vl:num(g(r,'VALOR DO BEM (R$)','VALOR DO BEM')), tb:g(r,'TIPO DE BEM'),
+    dg:g(r,'DESTINAÇÃO (SIGLog)'), dsi:g(r,'DESTINAÇÃO (SIAD)'),
+    al:g(r,'EM ALIENAÇÃO?','EM ALIENACAO'), si:g(r,'CONSTA NO SIAD?'),
+    ur:g(r,'UNIDADE RESPONSÁVEL (SIAD)'), inf:g(r,'CADASTRO INFERIDO'),
+    comb:g(r,'COMBUSTÍVEL'), man:g(r,'EM MANUT./ACIDENTADO?','EM MANUT ACIDENTADO'),
+    manmot:g(r,'MOTIVO DA MANUTENÇÃO'),
+    pnd: pdl?`${pdl}/${pdp} R${pda}`:null,
+    pnt: ptl?`${ptl}/${ptp} R${pta}`:null,
+    aro: pda?pda+'"'+(pta&&pta!==pda?' / '+pta+'"':''):null,
+    oleo: ov?ov+(oa?' · '+oa:''):null};
+  });
   const AL = V.filter(x=>x.al==='SIM'), MN = V.filter(x=>x.man==='SIM');
   const AT = V.filter(x=>x.al!=='SIM'&&x.man!=='SIM');
   const md = a => {const n=a.filter(x=>x!=null); return n.length?n.reduce((x,y)=>x+y,0)/n.length:null;};
@@ -813,34 +839,34 @@ async function carregar(){
     viaturas:V,
     blocos:V.map(x=>({u:x.ue, s:x.al==='SIM'?'A':(x.man==='SIM'?'M':'D')})),
     manut_l:MN,
-    qdl:QD.filter(r=>r['CATEGORIA DO QDL']).map(r=>({
-      u:r['UNIDADE / FRAÇÃO NO QDL'], ue:r['UEOp'], m:r['MUNICÍPIO'],
-      c:r['CATEGORIA DO QDL'], p:num(r['PREVISTO (QDL)'])||0,
-      e:num(r['EXISTENTE'])||0, s:num(r['SALDO (EXIST. - PREV.)'])||0,
-      st:r['SITUAÇÃO']})),
+    qdl:QD.filter(r=>g(r,'CATEGORIA DO QDL')).map(r=>({
+      u:g(r,'UNIDADE / FRAÇÃO NO QDL'), ue:g(r,'UEOp'), m:g(r,'MUNICÍPIO'),
+      c:g(r,'CATEGORIA DO QDL'), p:num(g(r,'PREVISTO (QDL)'))||0,
+      e:num(g(r,'EXISTENTE'))||0, s:num(g(r,'SALDO (EXIST. - PREV.)','SALDO'))||0,
+      st:g(r,'SITUAÇÃO')})),
     ocio:{meses:D_EMB.ocio.meses, rot:D_EMB.ocio.rot,
-      linhas:OC.filter(r=>r['PREFIXO']).map(r=>({
-        pf:r['PREFIXO'], pl:r['PLACA'], mm:r['MARCA / MODELO'], cl:r['CLASSE'],
-        ue:r['UEOp'], fr:r['FRAÇÃO DETENTORA'], mu:r['MUNICÍPIO'], od:num(r['ODÔMETRO']),
-        cel:D_EMB.ocio.meses.map(m=>{const v=r[D_EMB.ocio.rot[D_EMB.ocio.meses.indexOf(m)].toUpperCase()];
+      linhas:OC.filter(r=>g(r,'PREFIXO')).map(r=>({
+        pf:g(r,'PREFIXO'), pl:g(r,'PLACA'), mm:g(r,'MARCA / MODELO'), cl:g(r,'CLASSE'),
+        ue:g(r,'UEOp'), fr:g(r,'FRAÇÃO DETENTORA'), mu:g(r,'MUNICÍPIO'), od:num(g(r,'ODÔMETRO')),
+        cel:D_EMB.ocio.rot.map(rt=>{const v=g(r,rt.toUpperCase());
           return v==='M'?'M':(v===''?null:num(v));}),
-        oc:num(r['MESES SEM RODAR'])||0, n:num(r['ABASTECIMENTOS'])||0,
-        fontes:r['FONTES UTILIZADAS'], just:num(r['MESES C/ MANUTENÇÃO'])||0,
-        semjust:num(r['MESES SEM JUSTIFICATIVA'])||0, nos:num(r['ORDENS DE SERVIÇO'])||0,
-        km:num(r['KM NO PERÍODO'])||0, ult:r['ÚLT. ABASTECIMENTO'],
-        dias:num(r['DIAS SEM ABASTECER']), sit:r['SITUAÇÃO']})),
+        oc:num(g(r,'MESES SEM RODAR'))||0, n:num(g(r,'ABASTECIMENTOS'))||0,
+        fontes:g(r,'FONTES UTILIZADAS'), just:num(g(r,'MESES C/ MANUTENÇÃO'))||0,
+        semjust:num(g(r,'MESES SEM JUSTIFICATIVA'))||0, nos:num(g(r,'ORDENS DE SERVIÇO'))||0,
+        km:num(g(r,'KM NO PERÍODO'))||0, ult:g(r,'ÚLT. ABASTECIMENTO'),
+        dias:num(g(r,'DIAS SEM ABASTECER')), sit:g(r,'SITUAÇÃO')})),
       matriz:D_EMB.ocio.matriz},
     cotas:{meses:D_EMB.cotas.meses, rot:D_EMB.cotas.rot, cota:D_EMB.cotas.cota,
       ordem:D_EMB.cotas.ordem,
-      linhas:CO.filter(r=>r['UEOp']).map((r,i)=>{
-        const c=D_EMB.cotas.cota[r['UEOp']]||{et:0,di:0,pr:0};
-        const et=num(r['ETANOL POC (L)'])||0, di=num(r['DIESEL POC (L)'])||0,
-              pr=num(r['PRIME (R$)'])||0;
-        return {ue:r['UEOp'], m:D_EMB.cotas.linhas[i]?D_EMB.cotas.linhas[i].m:'',
+      linhas:CO.filter(r=>g(r,'UEOp')).map((r,i)=>{
+        const c=D_EMB.cotas.cota[g(r,'UEOp')]||{et:0,di:0,pr:0};
+        const et=num(g(r,'ETANOL POC (L)'))||0, di=num(g(r,'DIESEL POC (L)'))||0,
+              pr=num(g(r,'PRIME (R$)'))||0;
+        return {ue:g(r,'UEOp'), m:D_EMB.cotas.linhas[i]?D_EMB.cotas.linhas[i].m:'',
           et:et, cet:c.et, pet:c.et?et/c.et:null, etd:Math.min(et,c.et), etx:Math.max(0,et-c.et),
           di:di, cdi:c.di, pdi:c.di?di/c.di:null, did:Math.min(di,c.di), dix:Math.max(0,di-c.di),
           pr:pr, cpr:c.pr, ppr:c.pr?pr/c.pr:null, prd:Math.min(pr,c.pr), prx:Math.max(0,pr-c.pr),
-          conv:num(r['CONVÊNIO (L)'])||0};})},
+          conv:num(g(r,'CONVÊNIO (L)'))||0};})},
     os:{}, os_tot:D_EMB.os_tot,
     manut:D_EMB.manut, sini:D_EMB.sini, movi:D_EMB.movi,
     abast_v:{}, abast:D_EMB.abast, abastX:D_EMB.abastX,
@@ -848,15 +874,15 @@ async function carregar(){
     ueop_frota:D_EMB.ueop_frota, cat:D_EMB.cat, ueop:D_EMB.ueop,
     sintese:D_EMB.sintese, alien:D_EMB.alien, pneu:D_EMB.pneu, ajustes:D_EMB.ajustes};
 
-  PV.forEach(r=>{ if(r['PLACA']) N.abast_v[r['PLACA']]={
-    n:num(r['ABASTECIMENTOS'])||0, vol:num(r['VOLUME_L'])||0, km:num(r['KM'])||0,
-    kml:num(r['KM_L']), ult:r['ULTIMO'], anormal:num(r['ANORMAL'])||0,
-    abaixo:num(r['ABAIXO'])||0, fontes:(r['FONTES']||'').split(', ').filter(Boolean)}; });
-  PMAN.forEach(r=>{ if(!r['PLACA']) return;
-    (N.os[r['PLACA']] = N.os[r['PLACA']]||[]).push({
-      tp:r['TIPO'], mo:r['MOTIVO'], ini:r['ENTRADA'], fim:r['RETIRADA'],
-      dias:num(r['DIAS']), os:r['OS'], prot:r['PROTOCOLO'], ofi:r['OFICINA'],
-      vl:num(r['VALOR']), st:r['STATUS'], un:r['UNIDADE'], pf:r['PREFIXO']}); });
+  PV.forEach(r=>{ const p=g(r,'PLACA'); if(p) N.abast_v[p]={
+    n:num(g(r,'ABASTECIMENTOS'))||0, vol:num(g(r,'VOLUME_L'))||0, km:num(g(r,'KM'))||0,
+    kml:num(g(r,'KM_L')), ult:g(r,'ULTIMO'), anormal:num(g(r,'ANORMAL'))||0,
+    abaixo:num(g(r,'ABAIXO'))||0, fontes:(g(r,'FONTES')||'').split(', ').filter(Boolean)}; });
+  PMAN.forEach(r=>{ const p=g(r,'PLACA'); if(!p) return;
+    (N.os[p] = N.os[p]||[]).push({
+      tp:g(r,'TIPO'), mo:g(r,'MOTIVO'), ini:g(r,'ENTRADA'), fim:g(r,'RETIRADA'),
+      dias:num(g(r,'DIAS')), os:g(r,'OS'), prot:g(r,'PROTOCOLO'), ofi:g(r,'OFICINA'),
+      vl:num(g(r,'VALOR')), st:g(r,'STATUS'), un:g(r,'UNIDADE'), pf:g(r,'PREFIXO')}); });
 
   /* --- agregações derivadas da frota --- */
   const cont=(arr,c)=>{const m={};arr.forEach(v=>{const k=v[c]||'—';m[k]=(m[k]||0)+1;});return m;};
