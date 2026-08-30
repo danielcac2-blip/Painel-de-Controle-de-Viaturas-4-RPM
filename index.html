@@ -35,6 +35,22 @@ header{border-bottom:1px solid var(--line);background:rgba(15,20,28,.92);
   text-transform:uppercase;line-height:1}
 .brand p{font-family:var(--mono);font-size:10.5px;color:var(--mut2);letter-spacing:.14em;
   text-transform:uppercase;margin-top:3px}
+.sync{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-bottom:6px;
+  flex-wrap:wrap}
+.sync #syncPlan,.sync #syncHora{white-space:nowrap}
+.sync #syncHora{color:var(--ink);font-weight:600}
+.sync button{background:rgba(59,130,246,.09);border:1px solid var(--azul);color:var(--azul);
+  font-family:var(--mono);font-size:11px;letter-spacing:.09em;padding:5px 13px;border-radius:2px;
+  cursor:pointer;transition:background .15s}
+.sync button:hover{background:rgba(59,130,246,.2)}
+.sync button:disabled{opacity:.45;cursor:default}
+#syncLed{display:inline-flex;align-items:center;gap:6px;letter-spacing:.09em}
+#syncLed i{width:7px;height:7px;border-radius:50%;background:var(--amb);display:inline-block}
+#syncLed.on i{background:var(--verd)} #syncLed.on b{color:var(--verd);font-weight:600}
+#syncLed.off i{background:var(--verm)} #syncLed.off b{color:var(--verm);font-weight:600}
+#lnkPlan{display:none;color:var(--azul);text-decoration:none;letter-spacing:.08em;
+  margin-bottom:6px;line-height:1.3}
+#lnkPlan:hover{text-decoration:underline}
 .stamp{margin-left:auto;text-align:right;font-family:var(--mono);font-size:10.5px;
   color:var(--mut2);letter-spacing:.1em;line-height:1.7}
 .stamp b{color:var(--azul);font-weight:500}
@@ -264,12 +280,16 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
      <p>Seção Frota · Estado-Maior · Juiz de Fora / MG</p>
    </div>
    <div class="stamp">
-     <a id="lnkPlan" href="#" target="_blank" rel="noopener"
-        style="display:none;color:var(--azul);text-decoration:none;border:1px solid var(--line2);
-        padding:5px 11px;border-radius:2px;letter-spacing:.08em">ABRIR PLANILHA-FONTE ↗</a><br>
-     Painel de controle de viaturas<br>
+     <div class="sync">
+       <span id="syncPlan">Planilha: —</span>
+       <button id="btnSync" type="button">&#8635; ATUALIZAR</button>
+       <span id="syncLed"><i></i><b>conectando…</b></span>
+       <span id="syncHora">—</span>
+     </div>
+     <div><a id="lnkPlan" href="#" target="_blank" rel="noopener">ABRIR PLANILHA-FONTE &#8599;</a></div>
+     <div class="stamp-txt">Painel de controle de viaturas<br>
      Fontes: <b>SIGLog</b> · <b>SIAD</b> · <b>QDL</b><br>
-     <span id="dt"></span>
+     <span id="dt"></span></div>
    </div>
   </div>
   <nav role="tablist">
@@ -737,7 +757,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
    CONFIGURAÇÃO — edite apenas esta linha para apontar para a planilha
    online no Google Drive. Cole o link de compartilhamento entre aspas.
    ==================================================================== */
-const PLANILHA_URL = "";
+const PLANILHA_URL = "https://docs.google.com/spreadsheets/d/1swSRKxCeW3P_mUE5D9YJfSzaa4xcjGRhZODdAJn7ZtA/edit";
 /* ==================================================================== */
 
 const SHEET_ID = "1swSRKxCeW3P_mUE5D9YJfSzaa4xcjGRhZODdAJn7ZtA";
@@ -843,13 +863,14 @@ async function carregar(){
   if(!V.length) throw new Error('FROTA lida mas nenhuma viatura montada');
   const AL = V.filter(x=>x.al==='SIM'), MN = V.filter(x=>x.man==='SIM');
   const AT = V.filter(x=>x.al!=='SIM'&&x.man!=='SIM');
-  const md = a => {const n=a.filter(x=>x!=null); return n.length?n.reduce((x,y)=>x+y,0)/n.length:null;};
+  const md = (a,dec=1) => {const n=a.filter(x=>x!=null);
+    return n.length?Number((n.reduce((x,y)=>x+y,0)/n.length).toFixed(dec)):null;};
   const N = {
     kpi:{total:V.length, ativas:AT.length, alienacao:AL.length, manut:MN.length,
       organicas:V.filter(x=>x.org==='Organica').length,
       locadas:V.filter(x=>x.org==='Locada').length,
       valor:V.reduce((a,b)=>a+(b.vl||0),0), valor_alien:AL.reduce((a,b)=>a+(b.vl||0),0),
-      idade:md(V.map(x=>x.idd)), odo:Math.round(md(V.map(x=>x.od))||0),
+      idade:md(V.map(x=>x.idd)), odo:Math.round(md(V.map(x=>x.od),0)||0),
       municipios:new Set(V.map(x=>x.mu).filter(Boolean)).size,
       fracoes:new Set(V.map(x=>x.fr).filter(Boolean)).size,
       idade_alien:md(AL.map(x=>x.idd)),
@@ -925,7 +946,7 @@ async function carregar(){
     if(x.idd!=null)d.id.push(x.idd); if(x.od!=null)d.od.push(x.od); });
   N.ueop_frota=Object.entries(ug).map(([k,v])=>({k:k,total:v.total,org:v.org,loc:v.loc,
     ali:v.ali,man:v.man,disp:v.total-v.ali-v.man,val:Math.round(v.val),
-    idade:md(v.id),odo:Math.round(md(v.od)||0)})).sort((a,b)=>b.total-a.total);
+    idade:md(v.id),odo:Math.round(md(v.od,0)||0)})).sort((a,b)=>b.total-a.total);
   const agg=c=>{const g={};N.qdl.forEach(r=>{const d=g[r[c]]=g[r[c]]||{prev:0,exist:0};
     d.prev+=r.p;d.exist+=r.e;});return g;};
   const gc=agg('c');
@@ -973,20 +994,54 @@ async function carregar(){
   return N;
 }
 
-async function boot(){
+/* ---------- estado da ligação com a planilha ---------- */
+const hhmm = d => d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',
+  hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(',','');
+function led(estado, txt){
+  const el = document.getElementById('syncLed');
+  el.className = estado;
+  el.querySelector('b').textContent = txt;
+}
+async function sincronizar(primeira){
+  const bt = document.getElementById('btnSync');
+  bt.disabled = true;
+  led('', 'atualizando…');
   try {
     const t0 = Date.now();
-    D = await carregar();
+    const novo = await carregar();
+    D = novo;
     console.log('dados do Sheets em', Date.now()-t0, 'ms');
-    const av = document.getElementById('fonteDados');
-    if(av) av.textContent = 'dados lidos da planilha online';
+    led('on', 'conectado');
+    const agora = new Date();
+    document.getElementById('syncHora').textContent = hhmm(agora);
+    document.getElementById('syncPlan').textContent = 'Planilha: ' + hhmm(agora);
+    const fd = document.getElementById('fonteDados');
+    if(fd) fd.textContent = 'dados lidos da planilha online';
+    if(!primeira){
+      /* recarrega a página para redesenhar tudo com os dados novos */
+      sessionStorage.setItem('recarregado','1');
+      location.reload();
+      return;
+    }
   } catch(e){
     console.warn('falha ao ler o Sheets, usando os dados embutidos:', e);
-    D = D_EMB;
-    const av = document.getElementById('fonteDados');
-    if(av) av.textContent = 'planilha online indisponível — dados da última geração';
+    if(primeira) D = D_EMB;
+    led('off', 'sem conexão');
+    document.getElementById('syncHora').textContent = hhmm(new Date());
+    document.getElementById('syncPlan').textContent = 'Planilha: indisponível';
+    const fd = document.getElementById('fonteDados');
+    if(fd) fd.textContent = 'planilha online indisponível — dados da última geração';
   }
+  bt.disabled = false;
+}
+async function boot(){
+  if (PLANILHA_URL) {
+    const lk = document.getElementById('lnkPlan');
+    lk.href = PLANILHA_URL; lk.style.display = 'inline-block';
+  }
+  await sincronizar(true);
   render();
+  document.getElementById('btnSync').addEventListener('click', ()=>sincronizar(false));
 }
 function render(){
 
@@ -1007,10 +1062,6 @@ document.getElementById('heroLead').innerHTML =
    instalada, e outras <b>${nf(D.kpi.manut)} estão em manutenção ou acidentadas</b> — restam
    <b>${nf(D.kpi.ativas)} viaturas</b> para uma dotação prevista de
    ${nf(D.cat.reduce((a,c)=>a+(c.prev||0),0))}.`;
-if (PLANILHA_URL) {
-  const lk = document.getElementById('lnkPlan');
-  lk.href = PLANILHA_URL; lk.style.display = 'inline-block';
-}
 document.getElementById('dt').textContent =
   'Extração de ' + new Date().toLocaleDateString('pt-BR');
 
@@ -1056,7 +1107,7 @@ document.getElementById('kpis').innerHTML =
   kpi('Viaturas orgânicas', nf(K.organicas), pc(K.organicas/K.total)+' da carga','g')+
   kpi('Viaturas locadas', nf(K.locadas), pc(K.locadas/K.total)+' da carga','')+
   kpi('Valor patrimonial', rs(K.valor), rs(K.valor_alien)+' imobilizados em alienação','money')+
-  kpi('Idade média', String(K.idade).replace('.',',')+'<em>anos</em>',
+  kpi('Idade média', String(Math.round(K.idade*10)/10).replace('.',',')+'<em>anos</em>',
       nf(K.mais10a)+' viaturas com mais de 10 anos','')+
   kpi('Odômetro médio', nf(K.odo)+'<em>km</em>',
       nf(K.mais150k)+' acima de 150 mil km','')+
@@ -1346,7 +1397,7 @@ renderQdl();
 document.getElementById('kAlien').innerHTML =
   kpi('Em alienação', nf(K.alienacao), 'Estocadas e a vender','r')+
   kpi('Valor imobilizado', rs(K.valor_alien), 'Ainda na carga patrimonial','money')+
-  kpi('Idade média', String(K.idade_alien).replace('.',',')+'<em>anos</em>',
+  kpi('Idade média', String(Math.round(K.idade_alien*10)/10).replace('.',',')+'<em>anos</em>',
       'Contra '+String(K.idade).replace('.',',')+' anos da frota','a')+
   kpi('Processos sem número', nf(K.alienacao), 'Nenhuma fase registrada','a');
 const asBars=(o,node,color)=>bars(document.getElementById(node),
