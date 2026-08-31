@@ -571,19 +571,16 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
   <div class="tablewrap" style="max-height:none;margin-top:14px">
     <table id="tCota"><thead><tr>
       <th>UEOp</th><th class="num">Etanol POC (L)</th><th class="num">% da cota</th>
-      <th class="num">Acima</th>
       <th class="num">Diesel POC (L)</th><th class="num">% da cota</th>
-      <th class="num">Acima</th>
       <th class="num">PRIME (R$)</th><th class="num">% da cota</th>
-      <th class="num">Acima da cota</th><th class="num">Convênio (L)</th>
+      <th class="num">Convênio (L)</th>
     </tr></thead><tbody></tbody></table>
   </div>
   <div class="note">Cada número é a <b>média mensal</b> da unidade nos oito meses do período,
-  comparada à cota mensal dela. As colunas <b>Acima</b> mostram quanto essa média ultrapassa a
-  cota — é o volume que a unidade precisou buscar fora do limite, tipicamente no convênio
-  depois de esgotar o posto orgânico. Somando as unidades que estouram, a região gasta
-  <b id="exTot"></b> por mês além das cotas, ainda que outras fiquem abaixo e o conjunto
-  feche dentro do limite.</div>
+  comparada à cota mensal dela. Percentual acima de 100% indica consumo além do limite, que
+  a unidade precisa buscar fora — tipicamente no convênio, depois de esgotar o posto orgânico.
+  Somando as unidades que estouram, a região gasta <b id="exTot"></b> por mês além das cotas,
+  ainda que outras fiquem abaixo e o conjunto feche dentro do limite.</div>
 
   <p class="eyebrow">Cota mês a mês</p>
   <div class="filters">
@@ -595,7 +592,6 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
       <th class="num">Etanol (L)</th><th class="num">% da cota</th>
       <th class="num">Diesel (L)</th><th class="num">% da cota</th>
       <th class="num">PRIME (R$)</th><th class="num">% da cota</th>
-      <th class="num">Acima da cota</th>
       <th class="num">Convênio (L)</th></tr></thead><tbody></tbody></table>
   </div>
 
@@ -1853,18 +1849,14 @@ const cel = (v,p,fmt) => `<td class="num" style="color:${p!=null?cor(p):'var(--m
 document.querySelector('#tCota tbody').innerHTML = CT.ordem.map(u=>{
   const c = CT.cota[u];
   const et=med(u,'et'), di=med(u,'di'), pr=med(u,'pr'), cv=med(u,'conv');
-  const etx=med(u,'etx'), dix=med(u,'dix'), prx=med(u,'prx');
   const P=(a,b)=>b?a/b:null;
   return `<tr><td><b>${u}</b></td>
     ${cel(et,P(et,c.et))}
     <td class="num" style="color:${cor(P(et,c.et))}">${pcCota(P(et,c.et),c.et)}</td>
-    <td class="num" style="color:${etx?'var(--verm)':'var(--mut2)'}">${etx?nf(Math.round(etx)):'—'}</td>
     ${cel(di,P(di,c.di))}
     <td class="num" style="color:${cor(P(di,c.di))}">${pcCota(P(di,c.di),c.di)}</td>
-    <td class="num" style="color:${dix?'var(--verm)':'var(--mut2)'}">${dix?nf(Math.round(dix)):'—'}</td>
     ${cel(pr,P(pr,c.pr),'rs')}
     <td class="num" style="color:${cor(P(pr,c.pr))}">${pcCota(P(pr,c.pr),c.pr,1)}</td>
-    <td class="num" style="color:${prx?'var(--verm)':'var(--mut2)'}">${prx?rs(prx):'—'}</td>
     <td class="num">${nf(Math.round(cv))}</td></tr>`;}).join('');
 document.getElementById('exTot').innerHTML =
   `${nf(Math.round(totM('etx')))} L de etanol, ${nf(Math.round(totM('dix')))} L de diesel e
@@ -1884,9 +1876,6 @@ function renderCt(){
       <td class="num" style="color:${cor(x.pdi)}">${pcCota(x.pdi, CT.cota[x.ue].di)}</td>
       <td class="num">${rs(x.pr)}</td>
       <td class="num" style="color:${cor(x.ppr)}">${pcCota(x.ppr, CT.cota[x.ue].pr, 1)}</td>
-      <td class="num" style="color:${(x.etx+x.dix+x.prx)?'var(--verm)':'var(--mut2)'}">${
-        x.etx||x.dix?nf(x.etx+x.dix)+' L':''}${x.prx?(x.etx||x.dix?' · ':'')+rs(x.prx):''}${
-        !(x.etx||x.dix||x.prx)?'—':''}</td>
       <td class="num">${nf(x.conv)}</td></tr>`;}).join('') + (()=>{
     /* uma linha de total por unidade presente no recorte */
     const us = uniq(rows.map(x=>x.ue));
@@ -1903,10 +1892,6 @@ function renderCt(){
         <td class="num" style="color:${cor(tD?S('di')/tD:null)}">${pcCota(tD?S('di')/tD:0, tD)}</td>
         <td class="num"><b>${rs(S('pr'))}</b></td>
         <td class="num" style="color:${cor(tP?S('pr')/tP:null)}">${pcCota(tP?S('pr')/tP:0, tP, 1)}</td>
-        <td class="num" style="color:${(S('etx')+S('dix')+S('prx'))?'var(--verm)':'var(--mut2)'}">${
-          (S('etx')+S('dix'))?nf(S('etx')+S('dix'))+' L':''}${
-          S('prx')?((S('etx')+S('dix'))?' · ':'')+rs(S('prx')):''}${
-          !(S('etx')+S('dix')+S('prx'))?'—':''}</td>
         <td class="num"><b>${nf(S('conv'))}</b></td></tr>`; }).join(''); })();
   cCt.textContent = rows.length+' linhas';
 }
