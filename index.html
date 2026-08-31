@@ -879,7 +879,9 @@ async function carregar(){
   console.log('conferência numérica — ano/odômetro/valor:',
     V[0]&&V[0].af, V[0]&&V[0].od, V[0]&&V[0].vl);
   if(!V.length) throw new Error('FROTA lida mas nenhuma viatura montada');
-  const AL = V.filter(x=>x.al==='SIM'), MN = V.filter(x=>x.man==='SIM');
+  const AL = V.filter(x=>x.al==='SIM');
+  /* as que estão em alienação e com OS aberta já contam na alienação */
+  const MN = V.filter(x=>x.man==='SIM' && x.al!=='SIM');
   const AT = V.filter(x=>x.al!=='SIM'&&x.man!=='SIM');
   const md = (a,dec=1) => {const n=a.filter(x=>x!=null);
     return n.length?Number((n.reduce((x,y)=>x+y,0)/n.length).toFixed(dec)):null;};
@@ -931,7 +933,7 @@ async function carregar(){
           di:di, cdi:c.di, pdi:c.di?di/c.di:null, did:Math.min(di,c.di), dix:Math.max(0,di-c.di),
           pr:pr, cpr:c.pr, ppr:c.pr?pr/c.pr:null, prd:Math.min(pr,c.pr), prx:Math.max(0,pr-c.pr),
           conv:num(g(r,'CONVÊNIO (L)'))||0};})},
-    os:{}, os_tot:D_EMB.os_tot,
+    os:{}, os_tot:D_EMB.os_tot, os_ano:{},
     manut:D_EMB.manut, sini:D_EMB.sini, movi:D_EMB.movi,
     abast_v:{}, abast:D_EMB.abast, abastX:D_EMB.abastX,
     classes:D_EMB.classes, odofaixa:D_EMB.odofaixa, tipobem:D_EMB.tipobem,
@@ -946,7 +948,38 @@ async function carregar(){
     (N.os[p] = N.os[p]||[]).push({
       tp:g(r,'TIPO'), mo:g(r,'MOTIVO'), ini:g(r,'ENTRADA'), fim:g(r,'RETIRADA'),
       dias:num(g(r,'DIAS')), os:g(r,'OS'), prot:g(r,'PROTOCOLO'), ofi:g(r,'OFICINA'),
-      vl:num(g(r,'VALOR')), st:g(r,'STATUS'), un:g(r,'UNIDADE'), pf:g(r,'PREFIXO')}); });
+      vl:num(g(r,'VALOR')), st:g(r,'STATUS'), un:g(r,'UNIDADE'), pf:g(r,'PREFIXO'),
+      pl:p}); });
+
+  /* --- ordens de serviço por ano --- */
+  const anoDe = o => {const d=o.ini||o.fim||''; return d.length>=4?d.slice(-4):'';};
+  const porAno = {};
+  Object.values(N.os).flat().forEach(o=>{
+    const a = anoDe(o); if(!a) return;
+    (porAno[a] = porAno[a]||[]).push(o); });
+  Object.entries(porAno).forEach(([a,l])=>{
+    const cnt = c => {const m={}; l.forEach(o=>{ if(o[c]) m[o[c]]=(m[o[c]]||0)+1; }); return m;};
+    const top = (o,n)=>Object.fromEntries(Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,n));
+    const dias = l.filter(o=>o.dias!=null);
+    N.os_ano[a] = {n:l.length,
+      abertas:l.filter(o=>o.st && o.st.toLowerCase().indexOf('finalizado')<0
+        && o.st.toLowerCase().indexOf('redistribui')<0).length,
+      valor:Math.round(l.reduce((x,o)=>x+(o.vl||0),0)*100)/100,
+      viaturas:new Set(l.map(o=>o.pl)).size,
+      dias: dias.length?Math.round(dias.reduce((x,o)=>x+o.dias,0)/dias.length*10)/10:0,
+      tipo:cnt('tp'), status:cnt('st'), ofi:top(cnt('ofi'),8)}; });
+  N.os_tot = {n:Object.values(N.os).flat().length,
+    abertas:Object.values(N.os_ano).reduce((a,b)=>a+b.abertas,0),
+    valor:Math.round(Object.values(N.os).flat().reduce((a,o)=>a+(o.vl||0),0)*100)/100,
+    viaturas:Object.keys(N.os).length,
+    fora:Object.keys(N.os).filter(p=>!V.some(v=>v.pl===p)).length,
+    tipo:D_EMB.os_tot.tipo, status:D_EMB.os_tot.status, ofi:D_EMB.os_tot.ofi,
+    un:D_EMB.os_tot.un};
+  ['tipo','status','ofi'].forEach(k=>{
+    const m={}; Object.values(N.os).flat().forEach(o=>{const v=o[k==='tipo'?'tp':k==='status'?'st':'ofi'];
+      if(v) m[v]=(m[v]||0)+1;});
+    N.os_tot[k] = k==='ofi'
+      ? Object.fromEntries(Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10)) : m; });
 
   /* --- agregações derivadas da frota --- */
   const cont=(arr,c)=>{const m={};arr.forEach(v=>{const k=v[c]||'—';m[k]=(m[k]||0)+1;});return m;};
