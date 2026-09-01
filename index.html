@@ -1055,6 +1055,7 @@ async function carregar(){
     V[0]&&V[0].af, V[0]&&V[0].od, V[0]&&V[0].vl);
   if(!V.length) throw new Error('a aba FROTA foi lida mas nenhuma viatura foi montada — '
     + 'confira se a coluna PLACA está preenchida');
+  const cont=(arr,c)=>{const m={};arr.forEach(v=>{const k=v[c]||'—';m[k]=(m[k]||0)+1;});return m;};
   const AL = V.filter(x=>x.al==='SIM');
   /* as que estão em alienação e com OS aberta já contam na alienação */
   const MN = V.filter(x=>x.man==='SIM' && x.al!=='SIM');
@@ -1256,7 +1257,6 @@ async function carregar(){
   }
 
   /* --- agregações derivadas da frota --- */
-  const cont=(arr,c)=>{const m={};arr.forEach(v=>{const k=v[c]||'—';m[k]=(m[k]||0)+1;});return m;};
   N.classes = Object.entries(cont(V,'cl')).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
     const sub=V.filter(x=>x.cl===k), ali=sub.filter(x=>x.al==='SIM').length;
     return {k:k,n:v,alien:ali,disp:v-ali,idade:md(sub.map(x=>x.idd))};});
