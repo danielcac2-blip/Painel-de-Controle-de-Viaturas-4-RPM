@@ -69,18 +69,17 @@ body.travado{overflow:hidden}
 .stamp b{color:var(--azul);font-weight:500}
 
 /* ---------- abas ---------- */
-nav{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;
-  scrollbar-width:none}
-nav::-webkit-scrollbar{display:none}
+nav{display:flex;flex-wrap:wrap;gap:0 2px;border-bottom:1px solid var(--line)}
 .tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);
-  font-family:var(--disp);font-size:16.5px;font-weight:500;letter-spacing:.09em;
-  text-transform:uppercase;padding:13px 20px;cursor:pointer;white-space:nowrap;
+  font-family:var(--disp);font-size:15px;font-weight:500;letter-spacing:.07em;
+  text-transform:uppercase;padding:11px 15px;cursor:pointer;white-space:nowrap;
   transition:color .18s,border-color .18s}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--verm)}
 .tab:focus-visible{outline:2px solid var(--azul);outline-offset:-4px}
-.tab i{font-family:var(--mono);font-style:normal;font-size:10px;color:var(--mut2);
-  margin-right:7px;vertical-align:2px}
+.tab i{font-family:var(--mono);font-style:normal;font-size:9.5px;color:var(--mut2);
+  margin-right:6px;vertical-align:2px}
+@media (max-width:1500px){ .tab{font-size:14px;padding:10px 12px;letter-spacing:.05em} }
 .tab[aria-selected=true] i{color:var(--verm)}
 
 /* ---------- estrutura ---------- */
@@ -836,6 +835,11 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
     <select id="sbAno"><option value="">Todos os anos</option></select>
     <select id="sbUe"><option value="">Todas as unidades</option></select>
     <select id="sbSit"><option value="">Todas as situações</option></select>
+    <select id="sbDup">
+      <option value="">Todas as indicações</option>
+      <option value="dup">Só as indicadas mais de uma vez</option>
+      <option value="uni">Só as indicadas uma única vez</option>
+    </select>
     <input type="search" id="sbBusca" placeholder="Buscar placa, prefixo ou modelo">
     <span class="count" id="cSb"></span>
   </div>
@@ -2508,7 +2512,7 @@ document.getElementById('kSb').innerHTML =
   kpi('Transações registradas', nf(SB.n||0), 'Entradas na 4ª RPM desde 2020','b')+
   kpi('Com viatura indicada', nf(SB.com_ind||0),
       SB.n?pc(SB.com_ind/SB.n)+' das entradas':'','')+
-  kpi('Trocas concluídas', nf(saiu), SB.com_ind?pc(saiu/SB.com_ind)+' das indicadas':'','g')+
+  kpi('Já fora da carga', nf(saiu), SB.com_ind?pc(saiu/SB.com_ind)+' das indicadas':'','g')+
   kpi('Indicadas ainda na carga', nf((SB.com_ind||0)-saiu),
       'Com ou sem baixa encaminhada','a')+
   kpi('Sem baixa registrada', nf(SB.pendentes||0),
@@ -2559,8 +2563,11 @@ uniq(SL.map(x=>x.ano)).sort().reverse().forEach(a=>sbAno.innerHTML += `<option>$
 uniq(SL.map(x=>x.ue)).forEach(u=>sbUe.innerHTML += `<option>${u}</option>`);
 uniq(SL.map(x=>x.sit)).forEach(t=>sbSit.innerHTML += `<option>${t}</option>`);
 function renderSb(){
-  const a=sbAno.value, u=sbUe.value, t=sbSit.value, q=sbBusca.value.toLowerCase().trim();
-  const rows = SL.filter(x=>(!a||x.ano===a)&&(!u||x.ue===u)&&(!t||x.sit===t)&&(!q||
+  const a=sbAno.value, u=sbUe.value, t=sbSit.value, dp=sbDup.value,
+        q=sbBusca.value.toLowerCase().trim();
+  const rows = SL.filter(x=>(!a||x.ano===a)&&(!u||x.ue===u)&&(!t||x.sit===t)
+    &&(!dp || (dp==='dup' ? x.vezes>1 : x.pl_s && x.vezes===1))
+    &&(!q||
     [x.pl_e,x.pf_e,x.mm_e,x.pl_s,x.pf_s,x.mm_s].some(v=>(v||'').toLowerCase().includes(q))));
   document.querySelector('#tSb tbody').innerHTML = rows.map(x=>`<tr>
     <td class="num">${x.ano}</td><td>${x.bol||'—'}</td>
@@ -2572,9 +2579,11 @@ function renderSb(){
     <td><span class="pill ${SITP[x.sit]}">${x.sit}</span></td>
     <td class="num" style="color:${x.vezes>1?'var(--verm)':'var(--mut2)'}">${
       x.vezes>1?'<b>'+x.vezes+'</b>':(x.vezes||'—')}</td></tr>`).join('');
-  cSb.textContent = rows.length+' de '+SL.length+' transações';
+  const nd = rows.filter(x=>x.vezes>1).length;
+  cSb.textContent = rows.length+' de '+SL.length+' transações'
+    + (nd?' · '+nd+' com indicação repetida':'');
 }
-['sbAno','sbUe','sbSit','sbBusca'].forEach(id=>
+['sbAno','sbUe','sbSit','sbDup','sbBusca'].forEach(id=>
   document.getElementById(id).addEventListener('input',renderSb));
 renderSb();
 
