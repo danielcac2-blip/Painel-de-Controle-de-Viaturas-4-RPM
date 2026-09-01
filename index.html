@@ -769,8 +769,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
     <table id="tOs"><thead><tr>
       <th>Placa</th><th>Prefixo</th><th>Modelo</th><th>Unidade</th><th>Tipo</th>
       <th>Motivo / serviço</th><th>Entrada</th><th>Retirada</th><th class="num">Dias</th>
-      <th>Oficina</th><th class="num">Valor (R$)</th><th class="num">Economia</th>
-      <th>Status</th><th>Fonte</th>
+      <th>Oficina</th><th class="num">Valor (R$)</th><th>Status</th><th>Fonte</th>
     </tr></thead><tbody></tbody></table>
   </div>
 
@@ -2344,10 +2343,7 @@ document.getElementById('kOs').innerHTML =
   kpi('Viaturas atendidas', nf(OST.viaturas),
       OST.fora?nf(OST.fora)+' já fora da carga atual':'todas na carga','')+
   kpi('Valor aprovado', rs(OST.valor), 'Soma das ordens do período','money')+
-  kpi('Custo médio por ordem', rs(OST.valor/OST.n), '','')+
-  kpi('Economia negociada', rs(OST.economia||0),
-      OST.economia?pc(OST.economia/((OST.valor||0)+OST.economia))+' abatido do valor cheio':'',
-      'g');
+  kpi('Custo médio por ordem', rs(OST.valor/OST.n), '','');
 const dic2 = o => Object.entries(o||{}).sort((a,b)=>b[1]-a[1])
   .map(([k,v])=>({k:k,v:v,sub:pc(v/OST.n)}));
 
@@ -2369,7 +2365,6 @@ document.getElementById('osAnos').innerHTML = anosOrd.map((a,i)=>{
        A.n?pc(A.abertas/A.n)+' das ordens do ano':'','a')}
     ${kpi('Viaturas atendidas', nf(A.viaturas), '', '')}
     ${kpi('Valor aprovado', rs(A.valor), 'Custo médio '+rs(A.valor/A.n),'money')}
-    ${kpi('Economia em '+a, rs(A.economia||0), 'Abatido na negociação','g')}
     ${kpi('Dias parado — média', String(A.dias).replace('.',',')+'<em>dias</em>',
        'Da entrada à retirada','')}
   </div>
@@ -2396,8 +2391,6 @@ function renderOs(){
     <td class="num" style="color:${(o.dias||0)>60?'var(--verm)':'var(--mut)'}">${
       o.dias!=null?nf(o.dias):'—'}</td>
     <td>${o.ofi||'—'}</td><td class="num">${o.vl!=null?rs(o.vl):'—'}</td>
-    <td class="num" style="color:${o.economia?'var(--verd)':'var(--mut2)'}">${
-      o.economia?rs(o.economia):'—'}</td>
     <td><span class="pill ${o.st==='Finalizado'?'p-eq':'p-np'}">${o.st}</span></td>
     <td style="white-space:nowrap;color:var(--mut)">${o.fonte||'—'}</td></tr>`).join('');
   cOs.textContent = rows.length+' de '+OS.length+' ordens · '+
