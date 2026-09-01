@@ -1362,7 +1362,8 @@ async function sincronizar(primeira){
     document.getElementById('syncHora').textContent = hhmm(new Date());
     document.getElementById('syncPlan').textContent = 'Planilha: indisponível';
     const fd = document.getElementById('fonteDados');
-    if(fd) fd.textContent = 'planilha online indisponível — dados da última geração';
+    if(fd) fd.textContent = 'planilha online indisponível — ' + (e && e.message ? e.message
+      : 'motivo não informado') + ' — exibindo os dados da última geração';
   }
   bt.disabled = false;
 }
