@@ -978,13 +978,15 @@ const chave = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
    rótulos vêm da própria planilha (D_EMB.cols) e o casamento é por posição; a linha de
    cabeçalho na resposta serve só para saber onde começam os dados. */
 async function aba(nome, marca){
-  const r = await fetch(gviz(nome));
-  if(!r.ok) throw new Error(nome+': '+r.status);
+  let r;
+  try { r = await fetch(gviz(nome)); }
+  catch(e){ throw new Error('falha de rede ao buscar a aba ' + nome + ' (' + e.message + ')'); }
+  if(!r.ok) throw new Error('aba ' + nome + ' respondeu ' + r.status);
   const L = csv(await r.text());
   let cab = -1;
   for(let i=0;i<Math.min(6,L.length);i++)
     if(L[i].some(v=>chave(v)===chave(marca))){ cab=i; break; }
-  if(cab<0) throw new Error(nome+': coluna "'+marca+'" não localizada');
+  if(cab<0) throw new Error('a aba ' + nome + ' não tem a coluna "' + marca + '"');
   const nomes = (D_EMB.cols||{})[nome] || L[cab];
   const h = L[cab].map((v,i)=> String(v).trim() || String(nomes[i]||'').trim());
   const out = L.slice(cab+1).filter(l=>l.some(v=>v!=='')).map(l=>{
@@ -1051,7 +1053,8 @@ async function carregar(){
   console.log('viaturas montadas:', V.length, '| exemplo:', V[0]);
   console.log('conferência numérica — ano/odômetro/valor:',
     V[0]&&V[0].af, V[0]&&V[0].od, V[0]&&V[0].vl);
-  if(!V.length) throw new Error('FROTA lida mas nenhuma viatura montada');
+  if(!V.length) throw new Error('a aba FROTA foi lida mas nenhuma viatura foi montada — '
+    + 'confira se a coluna PLACA está preenchida');
   const AL = V.filter(x=>x.al==='SIM');
   /* as que estão em alienação e com OS aberta já contam na alienação */
   const MN = V.filter(x=>x.man==='SIM' && x.al!=='SIM');
