@@ -1335,8 +1335,22 @@ function led(estado, txt){
   el.className = estado;
   el.querySelector('b').textContent = txt;
 }
+const LOCAL = location.protocol === 'file:';
 async function sincronizar(primeira){
   const bt = document.getElementById('btnSync');
+  if(LOCAL){
+    /* aberto direto do disco: o navegador bloqueia a leitura de outro site */
+    led('off', 'arquivo local');
+    document.getElementById('syncHora').textContent = hhmm(new Date());
+    document.getElementById('syncPlan').textContent = 'Planilha: não consultada';
+    const fd = document.getElementById('fonteDados');
+    if(fd) fd.innerHTML = 'arquivo aberto direto do computador — o navegador não permite '
+      + 'consultar a planilha nesse modo. Publique o arquivo e acesse pelo endereço do painel '
+      + 'para ler os dados ao vivo. Exibindo os dados da última geração.';
+    bt.disabled = true;
+    if(primeira) D = D_EMB;
+    return;
+  }
   bt.disabled = true;
   led('', 'atualizando…');
   try {
