@@ -995,13 +995,24 @@ async function aba(nome, marca){
 const g = (o,...alts) => { for(const a of alts){ const v=o[chave(a)]; if(v!==undefined&&v!=='') return v; }
   return ''; };
 
+/* abas opcionais não derrubam a leitura: se faltarem na planilha, o painel usa o
+   que veio da última geração para aquele bloco */
+const opcional = (nome, marca) => aba(nome, marca).catch(e=>{
+  console.warn('aba ausente ou ilegível, usando a reserva:', nome, e.message);
+  const v = []; v._ausente = true; return v; });
+
 async function carregar(){
   const [FR,QD,CO,OC,PV,PM,PU,PUM,PG,PMAN,SBT] = await Promise.all([
-    aba('FROTA','PLACA'), aba('QDL','CATEGORIA DO QDL'), aba('COTAS','UEOp'),
-    aba('OCIOSAS','PREFIXO'), aba('PAINEL_ABAST_VTR','PLACA'), aba('PAINEL_ABAST_MES','MES'),
-    aba('PAINEL_ABAST_UE','UEOP'), aba('PAINEL_ABAST_UE_MES','UEOP'),
-    aba('PAINEL_ABAST_GERAL','CHAVE'), aba('PAINEL_MANUTENCAO','PLACA'),
-    aba('SUBSTITUICAO','PLACA QUE ENTROU')]);
+    aba('FROTA','PLACA'), aba('QDL','CATEGORIA DO QDL'),
+    opcional('COTAS','UEOp'), opcional('OCIOSAS','PREFIXO'),
+    opcional('PAINEL_ABAST_VTR','PLACA'), opcional('PAINEL_ABAST_MES','MES'),
+    opcional('PAINEL_ABAST_UE','UEOP'), opcional('PAINEL_ABAST_UE_MES','UEOP'),
+    opcional('PAINEL_ABAST_GERAL','CHAVE'), opcional('PAINEL_MANUTENCAO','PLACA'),
+    opcional('SUBSTITUICAO','PLACA QUE ENTROU')]);
+  const faltando = [['COTAS',CO],['OCIOSAS',OC],['PAINEL_ABAST_VTR',PV],
+    ['PAINEL_ABAST_MES',PM],['PAINEL_ABAST_UE',PU],['PAINEL_ABAST_UE_MES',PUM],
+    ['PAINEL_ABAST_GERAL',PG],['PAINEL_MANUTENCAO',PMAN],['SUBSTITUICAO',SBT]]
+    .filter(([,v])=>v._ausente).map(([k])=>k);
 
   /* --- viaturas --- */
   console.log('colunas da FROTA:', FR._cab);
@@ -1067,6 +1078,7 @@ async function carregar(){
     blocos:V.map(x=>({u:x.ue, s:x.al==='SIM'?'A':(x.man==='SIM'?'M':'D')})),
     manut_l:MN,
     subst:(()=>{
+      if(SBT._ausente) return D_EMB.subst;
       const L = SBT.filter(r=>g(r,'PLACA QUE ENTROU')).map(r=>({
         ano:g(r,'ANO'), bol:g(r,'BOLETIM'), pf_e:g(r,'PREFIXO QUE ENTROU'),
         pl_e:g(r,'PLACA QUE ENTROU'), mm_e:g(r,'MARCA / MODELO QUE ENTROU'),
@@ -1100,7 +1112,7 @@ async function carregar(){
       c:g(r,'CATEGORIA DO QDL'), p:num(g(r,'PREVISTO (QDL)'))||0,
       e:num(g(r,'EXISTENTE'))||0, s:num(g(r,'SALDO (EXIST. - PREV.)','SALDO'))||0,
       st:g(r,'SITUAÇÃO')})),
-    ocio:{meses:D_EMB.ocio.meses, rot:D_EMB.ocio.rot,
+    ocio: OC._ausente ? D_EMB.ocio : {meses:D_EMB.ocio.meses, rot:D_EMB.ocio.rot,
       /* o rodapé da aba traz um resumo por unidade; só entram linhas de viatura,
          reconhecidas pela placa no formato de emplacamento */
       linhas:OC.filter(r=>/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/
@@ -1117,7 +1129,8 @@ async function carregar(){
         km:num(g(r,'KM NO PERÍODO'))||0, ult:g(r,'ÚLT. ABASTECIMENTO'),
         dias:num(g(r,'DIAS SEM ABASTECER')), sit:g(r,'SITUAÇÃO')})),
       matriz:D_EMB.ocio.matriz},
-    cotas:{meses:D_EMB.cotas.meses, rot:D_EMB.cotas.rot, cota:D_EMB.cotas.cota,
+    cotas: CO._ausente ? D_EMB.cotas : {meses:D_EMB.cotas.meses, rot:D_EMB.cotas.rot,
+      cota:D_EMB.cotas.cota,
       ordem:D_EMB.cotas.ordem,
       /* o bloco de resumo no rodapé da aba tem outra estrutura: só entram
          as linhas cujo mês é um dos rótulos conhecidos */
@@ -1141,10 +1154,14 @@ async function carregar(){
     ueop_frota:D_EMB.ueop_frota, cat:D_EMB.cat, ueop:D_EMB.ueop,
     sintese:D_EMB.sintese, alien:D_EMB.alien, pneu:D_EMB.pneu, ajustes:D_EMB.ajustes};
 
+  if(PV._ausente) N.abast_v = D_EMB.abast_v;
   PV.forEach(r=>{ const p=g(r,'PLACA'); if(p) N.abast_v[p]={
     n:num(g(r,'ABASTECIMENTOS'))||0, vol:num(g(r,'VOLUME_L'))||0, km:num(g(r,'KM'))||0,
     kml:num(g(r,'KM_L')), ult:g(r,'ULTIMO'), anormal:num(g(r,'ANORMAL'))||0,
     abaixo:num(g(r,'ABAIXO'))||0, fontes:(g(r,'FONTES')||'').split(', ').filter(Boolean)}; });
+  if(PMAN._ausente){ N.os = D_EMB.os; N.os_tot = D_EMB.os_tot; N.os_ano = D_EMB.os_ano;
+    N.os_ue = D_EMB.os_ue; N.os_classe = D_EMB.os_classe; N.os_modelo = D_EMB.os_modelo;
+    N.os_oficina = D_EMB.os_oficina; N.os_vtr = D_EMB.os_vtr; N.os_base = D_EMB.os_base; }
   PMAN.forEach(r=>{ const p=g(r,'PLACA'); if(!p) return;
     (N.os[p] = N.os[p]||[]).push({
       tp:g(r,'TIPO'), mo:g(r,'MOTIVO'), ini:g(r,'ENTRADA'), fim:g(r,'RETIRADA'),
@@ -1189,6 +1206,7 @@ async function carregar(){
       ? Object.fromEntries(Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10)) : m; });
 
   /* --- cortes analíticos da manutenção: 2026 + o que segue aberto de anos anteriores --- */
+  if(!PMAN._ausente){
   const ANO_C = String(Math.max(...Object.keys(N.os_ano).map(Number)));
   const todas = Object.values(N.os).flat();
   const baseC = todas.filter(o=>{
@@ -1232,6 +1250,7 @@ async function carregar(){
       mu:x.mu, od:x.od, af:x.af,
       custo_km: x.od ? Math.round(v.valor/x.od*1000)/1000 : null};
   }).sort((a,b)=>b.valor-a.valor);
+  }
 
   /* --- agregações derivadas da frota --- */
   const cont=(arr,c)=>{const m={};arr.forEach(v=>{const k=v[c]||'—';m[k]=(m[k]||0)+1;});return m;};
@@ -1301,6 +1320,7 @@ async function carregar(){
     .sort((a,b)=>b.n-a.n);
   pn.pend=pn.modelos.filter(x=>x.falta);
   N.pneu=pn;
+  N._faltando = faltando;
   return N;
 }
 
@@ -1326,7 +1346,9 @@ async function sincronizar(primeira){
     document.getElementById('syncHora').textContent = hhmm(agora);
     document.getElementById('syncPlan').textContent = 'Planilha: ' + hhmm(agora);
     const fd = document.getElementById('fonteDados');
-    if(fd) fd.textContent = 'dados lidos da planilha online';
+    if(fd) fd.textContent = (novo._faltando && novo._faltando.length)
+      ? 'planilha online lida — abas ausentes: ' + novo._faltando.join(', ')
+      : 'dados lidos da planilha online';
     if(!primeira){
       /* recarrega a página para redesenhar tudo com os dados novos */
       sessionStorage.setItem('recarregado','1');
