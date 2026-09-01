@@ -1018,7 +1018,8 @@ async function carregar(){
           di:di, cdi:c.di, pdi:c.di?di/c.di:null, did:Math.min(di,c.di), dix:Math.max(0,di-c.di),
           pr:pr, cpr:c.pr, ppr:c.pr?pr/c.pr:null, prd:Math.min(pr,c.pr), prx:Math.max(0,pr-c.pr),
           conv:num(g(r,'CONVÊNIO (L)'))||0};})},
-    os:{}, os_tot:D_EMB.os_tot, os_ano:{},
+    os:{}, os_tot:D_EMB.os_tot, os_ano:{}, os_ue:[], os_classe:[], os_modelo:[],
+    os_oficina:[], os_vtr:[], os_base:{},
     manut:D_EMB.manut, sini:D_EMB.sini, movi:D_EMB.movi,
     abast_v:{}, abast:D_EMB.abast, abastX:D_EMB.abastX,
     classes:D_EMB.classes, odofaixa:D_EMB.odofaixa, tipobem:D_EMB.tipobem,
@@ -1071,6 +1072,51 @@ async function carregar(){
       if(v) m[v]=(m[v]||0)+1;});
     N.os_tot[k] = k==='ofi'
       ? Object.fromEntries(Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10)) : m; });
+
+  /* --- cortes analíticos da manutenção: 2026 + o que segue aberto de anos anteriores --- */
+  const ANO_C = String(Math.max(...Object.keys(N.os_ano).map(Number)));
+  const todas = Object.values(N.os).flat();
+  const baseC = todas.filter(o=>{
+    const a = anoDe(o);
+    return a===ANO_C || (a && a<ANO_C && o.st &&
+      o.st.toLowerCase().indexOf('finalizado')<0 && o.st.toLowerCase().indexOf('redistribui')<0);
+  });
+  const vDe = pl => V.find(x=>x.pl===pl) || {};
+  function agrup(lista, chave, minimo){
+    const g={};
+    lista.forEach(o=>{ const k=chave(o); if(!k) return;
+      const d=g[k]=g[k]||{k:k,n:0,vt:new Set(),valor:0,dias:[],corr:0,prev:0,acid:0};
+      d.n++; d.vt.add(o.pl); d.valor+=o.vl||0;
+      if(o.dias!=null) d.dias.push(o.dias);
+      if(o.tp==='Corretiva') d.corr++;
+      else if(o.tp==='Preventiva') d.prev++;
+      else if(o.tp==='Acidente') d.acid++; });
+    return Object.values(g).filter(d=>d.n>=(minimo||0)).map(d=>({
+      k:d.k, n:d.n, vt:d.vt.size, valor:Math.round(d.valor*100)/100,
+      medio:Math.round(d.valor/d.n*100)/100,
+      dias:d.dias.length?Math.round(d.dias.reduce((a,b)=>a+b,0)/d.dias.length*10)/10:null,
+      corr:d.corr, prev:d.prev, acid:d.acid})).sort((a,b)=>b.valor-a.valor);
+  }
+  N.os_ue      = agrup(baseC, o=>vDe(o.pl).ue);
+  N.os_classe  = agrup(baseC, o=>vDe(o.pl).cl);
+  N.os_modelo  = agrup(baseC, o=>vDe(o.pl).mm, 3);
+  N.os_oficina = agrup(baseC, o=>o.ofi, 2);
+  N.os_base = {ano:ANO_C, n:baseC.length,
+    abertas_ant: baseC.filter(o=>anoDe(o)<ANO_C).length,
+    valor: Math.round(baseC.reduce((a,o)=>a+(o.vl||0),0)*100)/100};
+  const vt={};
+  baseC.forEach(o=>{
+    const d=vt[o.pl]=vt[o.pl]||{pl:o.pl,n:0,valor:0,dias:0,abertas:0,ult:null};
+    d.n++; d.valor+=o.vl||0; d.dias+=o.dias||0;
+    if(o.st && o.st.toLowerCase().indexOf('finalizado')<0) d.abertas++;
+    const ch = x => x ? x.slice(6)+x.slice(3,5)+x.slice(0,2) : '';
+    if(o.ini && (!d.ult || ch(o.ini)>ch(d.ult))) d.ult=o.ini; });
+  N.os_vtr = Object.values(vt).map(v=>{
+    const x=vDe(v.pl);
+    return {...v, valor:Math.round(v.valor*100)/100, pf:x.pf, mm:x.mm, cl:x.cl, ue:x.ue,
+      mu:x.mu, od:x.od, af:x.af,
+      custo_km: x.od ? Math.round(v.valor/x.od*1000)/1000 : null};
+  }).sort((a,b)=>b.valor-a.valor);
 
   /* --- agregações derivadas da frota --- */
   const cont=(arr,c)=>{const m={};arr.forEach(v=>{const k=v[c]||'—';m[k]=(m[k]||0)+1;});return m;};
