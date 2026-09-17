@@ -279,6 +279,251 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
   *{animation:none!important;transition:none!important}
   .blk{opacity:1}
 }
+
+/* =========================================================
+   TEMA INSTITUCIONAL PMMG — Painel de Viaturas 4ª RPM
+   Cole este bloco no final do bloco de estilo do index.html,
+   logo antes da tag de fechamento do estilo (antes do fim do HEAD)
+   Nada mais precisa ser alterado.
+   ========================================================= */
+
+:root{
+  --bg:#ffffff; --panel:#ffffff; --panel2:#F5F3E8;
+  --line:rgba(27,27,27,.13); --line2:rgba(27,27,27,.26);
+  --ink:#1B1B1B; --mut:#3F3F3F; --mut2:#565656;
+  --azul:#2E2E2E; --azul-d:#1F1F1F;
+  --verm:#B32126; --verm-d:#7E171B;
+  --amb:#A96E10; --verd:#1F6B46; --roxo:#5E5A2C;
+  --kaki:#9A9464; --kaki2:#D9D3AC; --areia:#E7E3C8; --preto:#262626;
+}
+
+body{background:#fff;color:var(--ink)}
+body::before{background:
+  radial-gradient(900px 420px at 12% -8%,rgba(154,148,100,.16),transparent 60%),
+  radial-gradient(760px 380px at 92% -4%,rgba(179,33,38,.05),transparent 62%)}
+
+/* ---- topo ---- */
+header{background:linear-gradient(90deg,#9A9464 0%,#B5AE7F 45%,#D9D3AC 100%);
+  border-bottom:none;backdrop-filter:none}
+.brand h1{color:#111}
+.brand p{color:rgba(0,0,0,.78)}
+.stamp{color:rgba(0,0,0,.74)}
+.stamp b{color:#2E2B17;font-weight:600}
+.sync{color:rgba(0,0,0,.8)}
+.sync #syncHora{color:#111}
+.sync button{background:var(--preto);border:1px solid var(--preto);color:#fff;border-radius:3px}
+.sync button:hover{background:#000}
+#syncLed i{background:#8A6D1F}
+#syncLed.on i{background:#1F5C3A}#syncLed.on b{color:#1F5C3A}
+#syncLed.off i{background:#8E1B20}#syncLed.off b{color:#8E1B20}
+
+/* ---- tela de acesso ---- */
+#lock{background:linear-gradient(180deg,#9A9464 0%,#D9D3AC 44%,#ffffff 44%,#ffffff 100%)}
+.lock-tit{color:#111;font-weight:600}
+#lockPwd{background:#fff;border:1px solid rgba(27,27,27,.3);color:#111}
+#lockPwd:focus{border-color:var(--preto)}
+#lockBtn{background:var(--preto);color:#fff}
+.lock-erro{color:#8E1B20}
+
+/* ---- abas ---- */
+nav{border-bottom:1px solid rgba(27,27,27,.14)}
+.tab{color:#3B3B3B}
+.tab:hover{color:#111}
+.tab[aria-selected=true]{color:#111;border-bottom-color:var(--verm);border-bottom-width:3px}
+.tab i{color:#454545}
+.tab[aria-selected=true] i{color:var(--verm)}
+.tab:focus-visible{outline-color:var(--preto)}
+
+/* ---- estrutura ---- */
+.eyebrow{color:#33301A;font-size:11px;letter-spacing:.14em}
+.eyebrow::after{background:rgba(27,27,27,.14)}
+.card{background:#fff;border:1px solid rgba(27,27,27,.13)}
+h3{color:#111}
+h3 small{color:#3F3F3F}
+
+/* ---- hero / matriz ---- */
+.hero{background:linear-gradient(180deg,#F7F5EC,#ffffff);border-color:rgba(27,27,27,.13)}
+.big{color:#111}
+.big span{color:#3F3F3F}
+.hero-lead{color:#3F3F3F}
+.hero-lead b{color:#111}
+.legend{color:#3F3F3F;font-size:11.5px}
+.mlab{color:#3F3F3F;font-size:11px}
+.mnum{color:#3F3F3F;font-size:12px}
+.blk.D{background:#9A9464}
+.blk.M{background:#8A6D1F}
+.blk.A{background:#B32126}
+
+/* ---- kpis ---- */
+.kpi{background:var(--areia);border:1px solid rgba(27,27,27,.08)}
+.kpi::before{background:rgba(27,27,27,.18)}
+.kpi.b::before{background:#5E5A2C}
+.kpi.r::before{background:var(--verm)}
+.kpi.a::before{background:var(--amb)}
+.kpi.g::before{background:var(--verd)}
+.kpi dt{color:#46431F;font-size:10.5px}
+.kpi dd{color:#111}
+.kpi dd em{color:#4A4A4A}
+.kpi small{color:#454545}
+
+/* ---- barras ---- */
+.track{background:#E3E0D2}
+.tick{background:#111;opacity:.9}
+.legend-in{color:#454545;font-size:10.5px}
+.legend-in em{background:#111;opacity:.9}
+.bar-t span:last-child{color:#3F3F3F}
+.bar-v{color:#3F3F3F;font-size:12.5px}
+.revbar{background:#E3E0D2}
+.revbar span{background:linear-gradient(90deg,#9A9464,#5E5A2C)}
+
+/* ---- diverging ---- */
+.dvname{color:#111}
+.dvbar{background:linear-gradient(90deg,transparent calc(50% - 1px),
+  rgba(27,27,27,.26) 50%,transparent calc(50% + 1px))}
+.dvneg{background:var(--verm)}
+.dvpos{background:#9A9464}
+.dvv{color:#3F3F3F;font-size:12px}
+
+/* ---- tabelas ---- */
+.tablewrap{background:#fff;border-color:rgba(27,27,27,.13)}
+th{background:var(--areia);color:#2E2B17;border-bottom:1px solid rgba(27,27,27,.2);font-size:10.5px}
+td{border-bottom:1px solid rgba(27,27,27,.09);color:var(--ink)}
+tbody tr:hover{background:#FAF9F2}
+select,input[type=search]{background:#fff;border:1px solid rgba(27,27,27,.26);color:#111}
+select:focus,input:focus{outline-color:var(--preto)}
+.count{color:#4A4A4A;font-size:12px}
+
+/* ---- pills ---- */
+.pill{border-width:1px;font-size:10px}
+.p-def,.p-alta{color:#8E1B20;border-color:rgba(179,33,38,.35);background:rgba(179,33,38,.08)}
+.p-tot{color:#6E1216;border-color:rgba(179,33,38,.5);background:rgba(179,33,38,.15)}
+.p-eq{color:#1F5C3A;border-color:rgba(47,122,79,.35);background:rgba(47,122,79,.08)}
+.p-exc{color:#2E2B17;border-color:rgba(154,148,100,.55);background:rgba(154,148,100,.18)}
+.p-np,.p-med{color:#5C4710;border-color:rgba(138,109,31,.4);background:rgba(138,109,31,.1)}
+.p-baixa{color:#3B3B3B;border-color:rgba(27,27,27,.22);background:rgba(27,27,27,.05)}
+
+/* ---- listas / notas ---- */
+.alist{background:rgba(27,27,27,.13);border-color:rgba(27,27,27,.13)}
+.ai{background:#fff}
+.ai.zero b{color:var(--verd)}
+.ai.alta b{color:var(--verm)}
+.ai.media b{color:var(--amb)}
+.ai.info b{color:#5E5A2C}
+.note{color:#3F3F3F;border-left:3px solid #8A8455}
+.note b{color:#111}
+
+/* ---- consulta / ficha ---- */
+.search input{background:#fff;border:1px solid rgba(27,27,27,.26);color:#111}
+.search input::placeholder{color:#555}
+.hint{color:#454545}
+.sugg button{background:var(--panel2);border:1px solid rgba(27,27,27,.18);color:#111}
+.sugg button:hover{border-color:var(--preto)}
+.sugg button:hover b{color:#3D3A20}
+.sugg button span{color:#4A4A4A}
+.sugg button i{color:#3F3F3F}
+.plate{background:#F5F3E8;border:2px solid var(--preto)}
+.plate em{color:#45422C}
+.plate b{color:#111}
+.vhead{background:linear-gradient(180deg,#F7F5EC,#ffffff);border-bottom-color:rgba(27,27,27,.13)}
+.vprefix{color:#111}
+.vprefix span{color:#45422C;font-size:10.5px}
+.vmodel{color:#111}
+.vmodel span{color:#3F3F3F}
+.ficha{background:#fff;border-color:rgba(27,27,27,.13)}
+.fgrid{background:rgba(27,27,27,.13)}
+.fi{background:#fff}
+.fi dt{color:#46431F;font-size:10px}
+.fi dd{color:#111}
+.fi dd.vazio{color:#4A4A4A}
+.fsec{background:var(--areia);color:#2E2B17;border-top-color:rgba(27,27,27,.12);font-size:10.5px}
+.rev,.hist{background:#fff}
+.empty{color:#4A4A4A}
+.miss{border:1px dashed rgba(27,27,27,.35);color:#3F3F3F}
+
+/* ---- rodapé e links ---- */
+footer{background:#E4E4E4;border-top:1px solid rgba(27,27,27,.12);color:#3B3B3B;font-size:11.5px;
+  padding-left:22px;padding-right:22px}
+a{color:#1B2A4A}
+a:hover{color:#B32126}
+
+/* =========================================================
+   REFINAMENTO — matriz em barra única + acabamento
+   ========================================================= */
+
+/* matriz: uma linha por unidade, comprimento = tamanho da frota */
+.matrix{gap:11px;padding-bottom:28px}
+.mrow{grid-template-columns:150px 1fr 58px;gap:16px;align-items:center}
+.mblocks{flex-wrap:nowrap;gap:1px;min-width:0;align-items:center}
+.blk{flex:0 1 4px;width:4px;min-width:1px;height:20px;border-radius:1px}
+.mlab{color:#2F2F2F;font-size:11.5px;letter-spacing:.04em;line-height:1.3}
+.mnum{color:#111;font-size:14px;font-weight:600;letter-spacing:.02em}
+
+/* legenda mais legível */
+.legend{gap:22px;padding-bottom:18px;color:#333;font-size:11.5px;letter-spacing:.1em}
+.legend i{width:11px;height:11px;border-radius:2px;margin-right:8px;vertical-align:-1px}
+
+/* cores das faixas: disponível / manutenção / alienação bem distintas */
+.blk.D{background:#8A8455}
+.blk.M{background:#C98A1E}
+.blk.A{background:#B32126}
+
+/* acabamento: cantos e profundidade */
+.card,.hero,.ficha,.tablewrap,.alist,.kpi{border-radius:10px}
+.card,.hero,.kpi,.tablewrap,.ficha{
+  box-shadow:0 1px 2px rgba(27,27,27,.04),0 10px 26px -14px rgba(27,27,27,.12)}
+.card{padding:22px 24px}
+.kpi{padding:17px 19px}
+.kpi::before{border-radius:10px 0 0 10px}
+.hero-top{padding:28px 26px 20px}
+.matrix{padding-left:26px;padding-right:26px}
+.legend{padding-left:26px;padding-right:26px}
+.pill{border-radius:99px;padding:3px 10px}
+.plate{border-radius:6px}
+.sync button,#lockBtn,select,input[type=search],.search input,.sugg button{border-radius:6px}
+body::before{background:none}
+header{box-shadow:0 1px 0 rgba(0,0,0,.14)}
+
+/* tabelas mais arejadas */
+td{padding:11px 14px}
+th{padding:12px 14px}
+
+/* respiro geral */
+.eyebrow{margin:44px 0 16px}
+.panel{padding:34px 0 80px}
+
+/* tabela de distribuição: cor só para exceção, nome da unidade em uma linha */
+td:first-child{white-space:nowrap}
+.tablewrap td.num{font-size:13px;letter-spacing:.01em}
+
+/* =========================================================
+   PANORAMA — barras empilhadas proporcionais (opção 1a)
+   ========================================================= */
+.matrix{gap:14px;padding-top:6px}
+.mrow{grid-template-columns:152px 1fr 98px;gap:18px;align-items:center}
+.mlab{font-family:'Barlow Condensed','Barlow',sans-serif;font-size:19px;font-weight:600;
+  letter-spacing:.04em;color:#111;text-transform:none;text-align:right;line-height:1.1}
+.mblocks{display:flex;flex-wrap:nowrap;gap:0;height:30px;border-radius:4px;overflow:hidden;
+  background:transparent;min-width:12px;opacity:0;animation:pop .45s ease forwards}
+.mseg{display:flex;align-items:center;padding-left:9px;min-width:2px;overflow:hidden;
+  color:#fff;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.02em}
+.mseg.D{background:#8A8455}
+.mseg.M{background:#A96E10}
+.mseg.A{background:#B32126}
+.mnum{display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:2px}
+.mnum b{font-family:'Barlow Condensed','Barlow',sans-serif;font-size:26px;font-weight:700;
+  line-height:1;letter-spacing:.01em}
+.mnum span{font-family:var(--mono);font-size:10px;color:#5A5A5A;letter-spacing:.06em;
+  white-space:nowrap}
+.mnum.ok b{color:#1F6B46}
+.mnum.warn b{color:#A96E10}
+.mnum.crit b{color:#B32126}
+@media(max-width:900px){
+  .mrow{grid-template-columns:104px 1fr 76px;gap:12px}
+  .mlab{font-size:15px}
+  .mnum b{font-size:21px}
+  .mseg{font-size:11px;padding-left:6px}
+}
+
 </style>
 </head>
 <body>
@@ -341,7 +586,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mo
       <p class="hero-lead" id="heroLead"></p>
     </div>
     <div class="legend">
-      <span><i style="background:var(--azul)"></i>Frota disponível</span>
+      <span><i style="background:#8A8455"></i>Frota disponível</span>
       <span><i style="background:var(--amb)"></i>Manutenção / acidentada</span>
       <span><i style="background:var(--verm-d)"></i>Em processo de alienação</span>
     </div>
@@ -1477,20 +1722,34 @@ const ordUe = ['21º BPM','47º BPM','2º BPM','27º BPM','68º BPM','EM/4ª RPM
                '10ª CIA PM IND','4ª CIA PM IND GER'];
 const mx = document.getElementById('matrix');
 let d = 0;
+const totUe = {};
+ordUe.forEach(u=>{ totUe[u] = D.blocos.filter(b=>b.u===u).length; });
+const maxUe = Math.max.apply(null, ordUe.map(u=>totUe[u]||0)) || 1;
 ordUe.forEach(u=>{
   const bs = D.blocos.filter(b=>b.u===u);
   if(!bs.length) return;
+  const c = {D:0,M:0,A:0};
+  bs.forEach(b=>{ if(c[b.s]!==undefined) c[b.s]++; });
+  const tot = bs.length;
+  const pct = Math.round(c.D/tot*100);
   const row = el('div','mrow');
   row.appendChild(el('div','mlab',u));
   const box = el('div','mblocks');
-  const ord = {D:0,M:1,A:2};
-  bs.sort((a,b)=>ord[a.s]-ord[b.s]).forEach(b=>{
-    const k = el('span','blk '+b.s);
-    k.style.animationDelay = (d++*1.6)+'ms';
-    box.appendChild(k);
+  box.style.width = (tot/maxUe*100)+'%';
+  box.style.animationDelay = (d++*40)+'ms';
+  const rot = {D:'disponíveis',M:'em manutenção',A:'em alienação'};
+  ['D','M','A'].forEach(s=>{
+    if(!c[s]) return;
+    const seg = el('div','mseg '+s);
+    seg.style.width = (c[s]/tot*100)+'%';
+    seg.title = c[s]+' '+rot[s];
+    if(c[s]/maxUe > 0.055) seg.textContent = c[s];
+    box.appendChild(seg);
   });
   row.appendChild(box);
-  row.appendChild(el('div','mnum',bs.length));
+  const n = el('div', 'mnum '+(pct<60?'crit':pct<80?'warn':'ok'));
+  n.innerHTML = '<b>'+pct+'%</b><span>'+tot+' na carga</span>';
+  row.appendChild(n);
   mx.appendChild(row);
 });
 
