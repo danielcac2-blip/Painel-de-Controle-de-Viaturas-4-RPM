@@ -263,6 +263,18 @@ select,input[type=search]{background:var(--panel);border:1px solid var(--line2);
   font-family:var(--body);font-size:12.5px;padding:8px 11px;border-radius:2px;min-width:150px}
 select:focus,input:focus{outline:2px solid var(--azul);outline-offset:1px}
 .count{font-family:var(--mono);font-size:11px;color:var(--mut2);align-self:center;margin-left:auto}
+.csv{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--line2);
+  border-radius:4px;color:var(--mut);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;padding:6px 10px;cursor:pointer;white-space:nowrap;align-self:center;
+  transition:background-color 150ms ease,color 150ms ease,border-color 150ms ease,
+             transform 120ms var(--ease-out)}
+.csv svg{width:13px;height:13px}
+.csv:active{transform:scale(.97)}
+.csv:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  .csv:hover{background:rgba(255,255,255,.05);color:var(--ink);border-color:var(--mut2)}
+}
+@media(prefers-reduced-motion:reduce){.csv:active{transform:none}}
 
 /* ---------- listas ---------- */
 .alist{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px}
@@ -2965,6 +2977,60 @@ function renderPn(){
 }
 ['pnBusca','pnSt'].forEach(id=>document.getElementById(id).addEventListener('input',renderPn));
 renderPn();
+
+/* ---------- exportação em CSV ----------
+   Lê a tabela como ela está na tela, de modo que o arquivo sai com o mesmo
+   recorte dos filtros aplicados. Separador ponto e vírgula e BOM, que é o que
+   o Excel em português entende sem pedir importação. */
+(function(){
+  const ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+    + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>';
+  const limpa = t => (t||'').replace(/\s+/g,' ').trim();
+  const campo = v => '"' + String(v).replace(/"/g,'""') + '"';
+
+  function baixar(tab, nome){
+    const cab = [...tab.querySelectorAll('thead th')].map(th=>limpa(th.textContent));
+    const linhas = [...tab.querySelectorAll('tbody tr')]
+      .filter(tr=>tr.querySelector('td'))
+      .map(tr=>[...tr.querySelectorAll('td')].map(td=>limpa(td.textContent)));
+    if(!linhas.length){ alert('Não há linhas para exportar com os filtros atuais.'); return; }
+    const csv = [cab, ...linhas].map(l=>l.map(campo).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'}));
+    a.download = nome + '_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
+  /* nome do arquivo: o último rótulo de seção acima do bloco de filtros */
+  function nomeDe(f){
+    let p = f.previousElementSibling, t = '';
+    while(p){
+      if(p.classList && p.classList.contains('eyebrow')){ t = p.textContent; break; }
+      p = p.previousElementSibling;
+    }
+    if(!t){ const sec = f.closest('.panel'); t = sec ? sec.id : 'painel'; }
+    return ('4RPM_' + limpa(t).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')).slice(0,60);
+  }
+
+  document.querySelectorAll('.filters').forEach(f=>{
+    let alvo = f.nextElementSibling;
+    while(alvo && !(alvo.querySelector && alvo.querySelector('table'))) alvo = alvo.nextElementSibling;
+    const tab = alvo && alvo.querySelector('table');
+    if(!tab) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'csv';
+    b.innerHTML = ICO + '<span>Baixar CSV</span>';
+    b.title = 'Baixa as linhas exibidas, já com os filtros aplicados';
+    b.addEventListener('click', ()=>baixar(tab, nomeDe(f)));
+    const cnt = f.querySelector('.count');
+    if(cnt) cnt.insertAdjacentElement('afterend', b); else f.appendChild(b);
+  });
+})();
+
 
 }
 </script>
