@@ -1279,7 +1279,7 @@ input[type=search],input[type=text],input[type=password],input:not([type]),texta
 <footer><div class="wrap">
   Painel gerado a partir do Sistema de Controle de Viaturas da 4ª RPM ·
   <span id="fTot">—</span> viaturas cruzadas entre SIGLog, mapa de carga do SIAD e QDL<br>
-  <b>Versão do painel: 05/10/2026 12:24</b><br>
+  <b>Versão do painel: 05/10/2026 13:51</b><br>
   Uso interno · Frota/EM/4ª RPM · <span id="fonteDados">carregando…</span>
 </div></footer>
 
@@ -1786,7 +1786,7 @@ async function sincronizar(primeira){
 /* ---------- acesso ---------- */
 /* acesso por pessoa: cada uma tem a sua senha, guardada só como hash com sal (SHA-256 iterado).
    Isto identifica quem entrou e dá as boas-vindas; NÃO protege os dados, que seguem no código do painel. */
-const ACESSO = {"iter": 5000, "lista": [{"n": "Cap Evelyn", "s": "Bem-vinda", "sal": "084b38fb6d96870a", "h": "438603cf91a30d947843eee120a0a8b0065340f6dc5ff514df01ee6937668bf0"}, {"n": "Ten João Victor", "s": "Bem-vindo", "sal": "5b6e8e33a600d25d", "h": "79d1832677cbff49348821339fed90d88ce46c35f8a8527268e7b987478e3d2c"}, {"n": "Sgt Kaehler", "s": "Bem-vindo", "sal": "10524014783d958f", "h": "8e15561798a6cbbe26841355c4ca5fb2c2485746f6e509f3d10bad4caa128552"}, {"n": "Sgt Ducastelo", "s": "Bem-vindo", "sal": "3040fd76ee136639", "h": "a6048f218cefd517b4c0b0e37457cc58e0bd23cf1c933bd536c0edfb911485c2"}, {"n": "Sgt Rômulo", "s": "Bem-vindo", "sal": "142f201c5f4f17c7", "h": "2fcadd2db2b0d685ac3c69e1974f61ed5c76b46a4378384a68f75f740427d2a2"}, {"n": "Sgt Meireles", "s": "Bem-vindo", "sal": "a35a3507940c274c", "h": "cf100c8dec5b29b7faa44c0b75452a81eaa6a99e525dcaa111e23c2ed0d98347"}, {"n": "Sd Jullia", "s": "Bem-vinda", "sal": "2e1dd6cc09e63f07", "h": "f86fee4bddea8693a23101109e2d97ed969dd04041142a509a4b946e3951a138"}]};
+const ACESSO = {"iter": 5000, "lista": [{"n": "Cap Evelyn", "s": "Bem-vinda", "sal": "084b38fb6d96870a", "h": "438603cf91a30d947843eee120a0a8b0065340f6dc5ff514df01ee6937668bf0"}, {"n": "Ten João Victor", "s": "Bem-vindo", "sal": "5b6e8e33a600d25d", "h": "79d1832677cbff49348821339fed90d88ce46c35f8a8527268e7b987478e3d2c"}, {"n": "Sgt Kaehler", "s": "Bem-vindo", "sal": "10524014783d958f", "h": "8e15561798a6cbbe26841355c4ca5fb2c2485746f6e509f3d10bad4caa128552"}, {"n": "Sgt Ducastelo", "s": "Bem-vindo", "sal": "3040fd76ee136639", "h": "a6048f218cefd517b4c0b0e37457cc58e0bd23cf1c933bd536c0edfb911485c2"}, {"n": "Sgt Rômulo", "s": "Bem-vindo", "sal": "142f201c5f4f17c7", "h": "2fcadd2db2b0d685ac3c69e1974f61ed5c76b46a4378384a68f75f740427d2a2"}, {"n": "Sgt Meireles", "s": "Bem-vindo", "sal": "a35a3507940c274c", "h": "cf100c8dec5b29b7faa44c0b75452a81eaa6a99e525dcaa111e23c2ed0d98347"}, {"n": "Sd Jullia", "s": "Bem-vinda", "sal": "2e1dd6cc09e63f07", "h": "f86fee4bddea8693a23101109e2d97ed969dd04041142a509a4b946e3951a138"}, {"n": "Arthur", "s": "Bem-vindo", "sal": "b560642060b8fcc8", "h": "82ab6a1df88fb49715d38ed2c43d66a49cbb431e1322631cbe046382f766943f"}, {"n": "Keyla", "s": "Bem-vinda", "sal": "f34aff9a832a2955", "h": "7c1ebe4d92d4b271bfffd5ebff64606ea4e8816b76fffd63a7c017e851afd5e7"}]};
 const USUARIOS = ACESSO.lista;
 const CHAVE_SESSAO = "frota4rpm_usuario";
 const SHA_K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2], SHA_H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
@@ -1833,7 +1833,7 @@ function registrarAcesso(u){
   try {
     if(!REGISTRO || !REGISTRO.url) return;
     fetch(REGISTRO.url, {method:'POST', mode:'no-cors', keepalive:true, headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({chave:REGISTRO.chave, nome:u.n, aparelho:aparelhoAtual(), versao:'05/10/2026 12:24'})}).catch(function(){});
+      body:JSON.stringify({chave:REGISTRO.chave, nome:u.n, aparelho:aparelhoAtual(), versao:'05/10/2026 13:51'})}).catch(function(){});
   } catch(e){}
 }
 function abrirPainel(){
