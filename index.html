@@ -1273,7 +1273,7 @@ button.acao-it:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
 <footer><div class="wrap">
   Painel gerado a partir do Sistema de Controle de Viaturas da 4ª RPM ·
   <span id="fTot">—</span> viaturas cruzadas entre SIGLog, mapa de carga do SIAD e QDL<br>
-  <b>Versão do painel: 04/10/2026 23:54</b><br>
+  <b>Versão do painel: 05/10/2026 10:18</b><br>
   Uso interno · Frota/EM/4ª RPM · <span id="fonteDados">carregando…</span>
 </div></footer>
 
@@ -1811,6 +1811,25 @@ function derivar(sal, senha){
 }
 const normSenha = t => String(t||'').replace(/\s+/g,'').toUpperCase();
 
+/* registro de acessos: a cada LOGIN (não a cada recarga) manda uma linha à planilha de acessos, via Apps Script.
+   É indicativo: quem lê o código vê o endereço e a chave. Se falhar, o login segue normalmente. */
+const REGISTRO = {"url": "https://script.google.com/macros/s/AKfycbybZ8e-ufhEL6ChoZGKVZID16y2y60gFo5ra6Ks_3M3J1cjASqs1NBdq1aG0nBCvVkkuQ/exec", "chave": "frota4rpm-47a61cb2b3ff011b"};
+function aparelhoAtual(){
+  const ua = navigator.userAgent || '';
+  const so = /iPhone|iPad|iPod/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows'
+           : /Mac OS X|Macintosh/.test(ua) ? 'Mac' : /Linux|X11/.test(ua) ? 'Linux' : 'outro';
+  const nav = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera' : /Firefox|FxiOS/.test(ua) ? 'Firefox'
+            : /Chrome|CriOS/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'navegador';
+  let inst = false; try { inst = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch(e){}
+  return so+' · '+nav+(inst ? ' · app instalado' : '');
+}
+function registrarAcesso(u){
+  try {
+    if(!REGISTRO || !REGISTRO.url) return;
+    fetch(REGISTRO.url, {method:'POST', mode:'no-cors', keepalive:true, headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({chave:REGISTRO.chave, nome:u.n, aparelho:aparelhoAtual(), versao:'05/10/2026 10:18'})}).catch(function(){});
+  } catch(e){}
+}
 function abrirPainel(){
   document.getElementById('lock').style.display = 'none';
   document.body.classList.remove('travado');
@@ -1833,7 +1852,7 @@ function conferirSenha(){
   const i = s ? USUARIOS.findIndex(u => derivar(u.sal, s) === u.h) : -1;
   if(i >= 0){
     try { sessionStorage.setItem(CHAVE_SESSAO, String(i)); } catch(e){}
-    window.__usuario = USUARIOS[i];
+    window.__usuario = USUARIOS[i]; registrarAcesso(USUARIOS[i]);
     campo.disabled = true; document.getElementById('lockBtn').disabled = true;
     boasVindas(USUARIOS[i], abrirPainel);
   } else {
