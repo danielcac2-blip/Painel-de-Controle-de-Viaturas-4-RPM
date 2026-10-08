@@ -1335,7 +1335,9 @@ input[type=search],input[type=text],input[type=password],input:not([type]),texta
   <div class="grid two" style="margin-top:14px">
     <div class="card" style="min-width:0"><h3>Orçamento por faixa de km até a revisão <small>viaturas × custo</small></h3>
       <div class="bars" id="bRevMes"></div>
-      <div class="legend" id="lgRev" style="padding-top:12px"></div></div>
+      <div class="legend" id="lgRev" style="padding-top:12px"></div>
+      <p class="eyebrow" style="margin-top:18px">Viaturas por unidade em cada faixa</p>
+      <div class="tablewrap" style="max-height:none;overflow-x:auto"><table id="tRevFx"><thead></thead><tbody></tbody></table></div></div>
     <div class="card" style="min-width:0"><h3>Custo adotado por revisão <small>aba REVISAO_CUSTOS</small></h3>
       <div class="tablewrap" style="max-height:none;overflow-x:auto">
         <table id="tRevCusto"><thead><tr>
@@ -1453,7 +1455,7 @@ input[type=search],input[type=text],input[type=password],input:not([type]),texta
 <footer><div class="wrap">
   Painel gerado a partir do Sistema de Controle de Viaturas da 4ª RPM ·
   <span id="fTot">—</span> viaturas cruzadas entre SIGLog, mapa de carga do SIAD e QDL<br>
-  <b>Versão do painel: 08/10/2026 11:22</b><br>
+  <b>Versão do painel: 08/10/2026 11:32</b><br>
   Uso interno · Frota/EM/4ª RPM · <span id="fonteDados">carregando…</span>
 </div></footer>
 
@@ -1652,7 +1654,7 @@ async function carregar(){
         cl:g(r,'CLASSE DO VEÍCULO'), g:g(r,'GRUPO DE CUSTO'), st:g(r,'SITUAÇÃO DA VIATURA'), it:nn(g(r,'INTERVALO (KM)')),
         odo:nn(g(r,'ODÔMETRO (KM)')), ult:nn(g(r,'KM DA ÚLT. REVISÃO')),
         upd:dd(g(r,'ÚLT. OS PREVENTIVA')), upt:g(r,'SERVIÇO DA ÚLT. OS'), fl:g(r,'ALERTA')}));
-      const cu = RVCT._ausente ? (e.custos||[]) : RVCT.filter(r=>g(r,'GRUPO')).map(r=>({g:g(r,'GRUPO'), n:nn(g(r,'OS NA AMOSTRA'))||0,
+      const cu = RVCT._ausente ? (e.custos||[]) : RVCT.filter(r=>/^(4 RODAS|MOTO)$/.test(g(r,'GRUPO'))).map(r=>({g:g(r,'GRUPO'), n:nn(g(r,'OS NA AMOSTRA'))||0,
         med:nn(g(r,'MEDIANA (R$)')), p25:nn(g(r,'P25 (R$)')), p75:nn(g(r,'P75 (R$)')), adot:nn(g(r,'CUSTO ADOTADO (R$)'))}));
       const corte = RVT.length ? dd(g(RVT[0],'DADOS ATÉ')) : '';
       return Object.assign({}, e, {corte:corte||e.corte, base:base, custos:cu});
@@ -2032,7 +2034,7 @@ function registrarAcesso(u){
   try {
     if(!REGISTRO || !REGISTRO.url) return;
     fetch(REGISTRO.url, {method:'POST', mode:'no-cors', keepalive:true, headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({chave:REGISTRO.chave, nome:u.n, aparelho:aparelhoAtual(), versao:'08/10/2026 11:22'})}).catch(function(){});
+      body:JSON.stringify({chave:REGISTRO.chave, nome:u.n, aparelho:aparelhoAtual(), versao:'08/10/2026 11:32'})}).catch(function(){});
   } catch(e){}
 }
 function abrirPainel(){
@@ -3929,6 +3931,14 @@ const DOCC = {'PENDENTE':'var(--verm)','AUSENTE':'var(--amb)','Confeccionado':'v
     segs: UE.map((u,i) => ({v:f.ue[u]||0, c:COR[i%COR.length]}))})));
   else bm.innerHTML = '<p class="empty">Nenhuma viatura nas faixas de até 3.000 km.</p>';
   document.getElementById('lgRev').innerHTML = UE.map((u,i) => '<span><i style="background:'+COR[i%COR.length]+'"></i>'+u+'</span>').join('');
+
+  /* viaturas por unidade em cada faixa */
+  const FXS = ['ATRASADA','ATÉ 500 KM','501 A 1.000 KM','1.001 A 2.000 KM','2.001 A 3.000 KM','MAIS DE 3.000 KM','SEM ODÔMETRO'];
+  const FXR = Object.assign({}, ROT, {'MAIS DE 3.000 KM':'Mais de 3.000 km','SEM ODÔMETRO':'Sem odômetro'});
+  const nUe = (s,u) => L.filter(x => x.sit === s && (!u || x.ue === u)).length;
+  document.querySelector('#tRevFx thead').innerHTML = '<tr><th>Faixa</th>'+UE.map(u => '<th class="num">'+u+'</th>').join('')+'<th class="num">Total</th></tr>';
+  document.querySelector('#tRevFx tbody').innerHTML = FXS.map(s => '<tr><td>'+FXR[s]+'</td>'+UE.map(u => '<td class="num">'+nf(nUe(s,u))+'</td>').join('')+'<td class="num"><b>'+nf(nUe(s))+'</b></td></tr>').join('')+
+    '<tr style="border-top:2px solid var(--line)"><td><b>Total</b></td>'+UE.map(u => '<td class="num"><b>'+nf(L.filter(x => x.ue === u).length)+'</b></td>').join('')+'<td class="num"><b>'+nf(L.length)+'</b></td></tr>';
 
   /* custo adotado */
   const cs = RV.custos || [];
