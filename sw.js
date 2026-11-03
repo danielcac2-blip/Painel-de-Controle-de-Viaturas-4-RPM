@@ -7,7 +7,7 @@
 
    VERSÃO: incremente a data a cada publicação. Isso descarta o cache antigo e
    garante que quem já instalou receba a versão nova na abertura seguinte. */
-const CACHE = 'viaturas-4rpm-2026-11-03a';
+const CACHE = 'viaturas-4rpm-2026-11-03c';
 const ARQUIVOS = ['./', './index.html', './manifest.json',
                   './icon-192.png', './icon-512.png'];
 
